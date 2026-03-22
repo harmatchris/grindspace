@@ -140,6 +140,26 @@ select:focus{border-color:var(--accent)}
 .toast.show{display:block;animation:su .3s ease}
 @keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .toast-x{float:right;margin-left:12px;cursor:pointer;color:#777;font-size:16px;line-height:1}
+
+/* BALANCE WIDGET */
+.balance-widget{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.balance-pill{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 12px;font-size:12px;transition:border-color .3s,background .3s;cursor:default;white-space:nowrap}
+.balance-pill .bal-icon{font-size:11px;opacity:.6}
+.balance-pill .bal-amt{font-weight:700;font-size:13px;color:var(--text);min-width:44px;text-align:right}
+.balance-pill .bal-lbl{font-size:10px;color:var(--sub)}
+.balance-pill.ok{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.07)}
+.balance-pill.ok .bal-amt{color:var(--success)}
+.balance-pill.warn{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07)}
+.balance-pill.warn .bal-amt{color:var(--warn)}
+.balance-pill.low{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08);animation:pulse 1.5s infinite}
+.balance-pill.low .bal-amt{color:var(--danger)}
+.balance-pill.loading .bal-amt{color:#555}
+@keyframes balSpin{to{transform:rotate(360deg)}}
+.bal-spin{display:none;width:10px;height:10px;border:2px solid #333;border-top-color:#777;border-radius:50%;animation:balSpin .7s linear infinite}
+.balance-pill.loading .bal-spin{display:block}
+.balance-pill.loading .bal-icon{display:none}
+.btn-topup{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 2px 10px var(--accent-glow)}
+.btn-topup:hover{background:var(--accent-l);transform:translateY(-1px)}
 </style>
 </head>
 <body>
@@ -156,6 +176,18 @@ select:focus{border-color:var(--accent)}
       <span class="key-saved-label" id="key-saved">Saved &#10003;</span>
       <div class="sdot" id="sdot"></div>
     </div>
+  </div>
+  <!-- Balance + Top-up -->
+  <div class="balance-widget">
+    <div class="balance-pill loading" id="bal-pill" title="WaveSpeed balance — refreshes automatically">
+      <div class="bal-spin"></div>
+      <span class="bal-icon">&#128176;</span>
+      <span class="bal-amt" id="bal-amt">—</span>
+      <span class="bal-lbl">credits</span>
+    </div>
+    <a class="btn-topup" href="https://wavespeed.ai/billing" target="_blank" rel="noopener">
+      + Top up
+    </a>
   </div>
 </header>
 
@@ -387,6 +419,37 @@ initDrop();
 function dot() {
   document.getElementById('sdot').classList.toggle('ok', apiKey.length > 8);
   checkBtns();
+  if (apiKey.length > 8) fetchBalance();
+}
+
+// ─── Live Balance ─────────────────────────────────────────────────────────────
+let balanceTimer = null;
+
+async function fetchBalance() {
+  if (!apiKey || apiKey.length < 8) return;
+  const pill = document.getElementById('bal-pill');
+  const amt = document.getElementById('bal-amt');
+  pill.className = 'balance-pill loading';
+  amt.textContent = '—';
+  try {
+    const r = await fetch(PROXY + '/api/v3/balance', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    const d = await r.json();
+    const bal = d?.data?.balance ?? d?.balance;
+    if (bal === undefined || bal === null) throw new Error('no balance field');
+    const n = parseFloat(bal);
+    amt.textContent = '$' + n.toFixed(2);
+    if (n >= 2)      pill.className = 'balance-pill ok';
+    else if (n >= 0.5) pill.className = 'balance-pill warn';
+    else             pill.className = 'balance-pill low';
+  } catch(e) {
+    amt.textContent = 'N/A';
+    pill.className = 'balance-pill';
+  }
+  // Auto-refresh every 30 s
+  clearTimeout(balanceTimer);
+  balanceTimer = setTimeout(fetchBalance, 30000);
 }
 
 function flashSaved() {
@@ -1039,6 +1102,8 @@ function markStep(map, id, state) {
 function showResult(url, isVid, time, cost) {
   document.getElementById('res-chip').textContent = 'Done';
   document.getElementById('res-chip').className = 'chip done';
+  // Refresh balance after every swap so it stays accurate
+  setTimeout(fetchBalance, 1500);
   const med = document.getElementById('res-media');
   med.style.display = 'block';
   med.innerHTML = isVid
