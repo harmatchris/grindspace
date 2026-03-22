@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>â¡ grindspace â AI Face Swap</title>
+<title>Ã¢ÂÂ¡ grindspace Ã¢ÂÂ AI Face Swap</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -34,7 +34,7 @@
   ::-webkit-scrollbar-track { background: var(--surface); }
   ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 3px; }
 
-  /* ââ Layout */
+  /* Ã¢ÂÂÃ¢ÂÂ Layout */
   .app { display: flex; flex-direction: column; min-height: 100vh; }
 
   header {
@@ -92,7 +92,7 @@
     gap: 18px;
   }
 
-  /* ââ Token panel */
+  /* Ã¢ÂÂÃ¢ÂÂ Token panel */
   .token-panel {
     background: #111;
     border: 1px solid var(--border);
@@ -150,7 +150,7 @@
   .btn-save.saved { background: rgba(34,197,94,0.2); color: #86efac; }
   .token-ok { font-size: 11px; color: rgba(34,197,94,0.7); display: flex; align-items: center; gap: 5px; }
 
-  /* ââ Warning */
+  /* Ã¢ÂÂÃ¢ÂÂ Warning */
   .warn-bar {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: 12px;
@@ -161,7 +161,7 @@
   }
   .warn-bar a { color: #fbbf24; }
 
-  /* ââ Mode + Quality row */
+  /* Ã¢ÂÂÃ¢ÂÂ Mode + Quality row */
   .controls-row {
     display: flex;
     align-items: center;
@@ -202,7 +202,7 @@
   .qtab:hover { color: #bbb; }
   .qtab.active { background: rgba(124,58,237,0.5); color: #e0d2ff; }
 
-  /* ââ Upload panels */
+  /* Ã¢ÂÂÃ¢ÂÂ Upload panels */
   .upload-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -266,7 +266,7 @@
   }
   .clear-btn:hover { background: rgba(0,0,0,0.95); }
 
-  /* ââ Options row */
+  /* Ã¢ÂÂÃ¢ÂÂ Options row */
   .options-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .toggle-btn {
     display: flex; align-items: center; gap: 7px;
@@ -279,7 +279,7 @@
   .toggle-btn.on { border-color: var(--accent); background: rgba(124,58,237,0.15); color: #c4b5fd; }
   .options-note { font-size: 11px; color: #444; }
 
-  /* ââ Swap button */
+  /* Ã¢ÂÂÃ¢ÂÂ Swap button */
   .swap-btn {
     width: 100%; padding: 15px;
     border-radius: 14px; border: none;
@@ -297,7 +297,7 @@
   .swap-btn.ready:hover { background: linear-gradient(135deg, #6d28d9, #9333ea); transform: translateY(-1px); box-shadow: 0 12px 35px rgba(124,58,237,0.45); }
   .swap-btn.ready:active { transform: translateY(0); }
 
-  /* ââ Progress */
+  /* Ã¢ÂÂÃ¢ÂÂ Progress */
   .progress-box {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -321,7 +321,7 @@
   .progress-fill.error { background: var(--danger); }
   .progress-hint { font-size: 11px; color: #444; }
 
-  /* ââ Result */
+  /* Ã¢ÂÂÃ¢ÂÂ Result */
   .result-box {
     display: flex; flex-direction: column; gap: 14px;
     animation: fadeIn 0.3s ease-out;
@@ -352,7 +352,7 @@
   }
   .btn-new:hover { color: var(--text); background: var(--surface2); }
 
-  /* ââ Error */
+  /* Ã¢ÂÂÃ¢ÂÂ Error */
   .error-box {
     display: flex; align-items: flex-start; gap: 10px;
     padding: 14px; border-radius: 12px;
@@ -364,7 +364,7 @@
   .error-title { font-size: 13px; font-weight: 600; color: #fca5a5; }
   .error-msg { font-size: 12px; color: rgba(252,165,165,0.7); margin-top: 3px; line-height: 1.4; }
 
-  /* ââ Info cards */
+  /* Ã¢ÂÂÃ¢ÂÂ Info cards */
   .info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -381,7 +381,7 @@
   .info-card h3 { font-size: 13px; font-weight: 600; color: #d1d5db; margin-bottom: 4px; }
   .info-card p { font-size: 11px; color: #4b5563; line-height: 1.5; }
 
-  /* ââ Footer */
+  /* Ã¢ÂÂÃ¢ÂÂ Footer */
   footer {
     border-top: 1px solid #1e1e1e;
     padding: 12px 24px;
@@ -390,7 +390,7 @@
     color: #333;
   }
 
-  /* ââ Spinner */
+  /* Ã¢ÂÂÃ¢ÂÂ Spinner */
   .spinner {
     width: 16px; height: 16px;
     border: 2px solid rgba(167,139,250,0.3);
@@ -415,16 +415,16 @@
   <!-- Header -->
   <header>
     <div class="logo">
-      <div class="logo-icon">â¡</div>
+      <div class="logo-icon">Ã¢ÂÂ¡</div>
       <div class="logo-text">
         <h1>grindspace</h1>
-        <p>AI Face Swap Â· No limits Â· No watermarks</p>
+        <p>AI Face Swap ÃÂ· No limits ÃÂ· No watermarks</p>
       </div>
     </div>
     <div class="header-right">
       <div id="statusDot" class="status-dot"></div>
       <span id="statusLabel" class="status-label">No token</span>
-      <button id="btnToken" class="btn-token" onclick="toggleSettings()">ð API Token</button>
+      <button id="btnToken" class="btn-token" onclick="toggleSettings()">Ã°ÂÂÂ API Token</button>
     </div>
   </header>
 
@@ -433,37 +433,37 @@
     <!-- Token panel -->
     <div id="tokenPanel" class="token-panel hidden">
       <div class="token-header">
-        ð Replicate API Token
-        <a href="https://replicate.com/account/api-tokens" target="_blank">Get free token â</a>
+        Ã°ÂÂÂ Replicate API Token
+        <a href="https://replicate.com/account/api-tokens" target="_blank">Get free token Ã¢ÂÂ</a>
       </div>
       <div class="token-row">
         <div class="token-input-wrap">
           <input id="tokenInput" class="token-input" type="password"
             placeholder="r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             onkeydown="if(event.key==='Enter') saveToken()">
-          <button class="toggle-vis" onclick="toggleVis()">ð</button>
+          <button class="toggle-vis" onclick="toggleVis()">Ã°ÂÂÂ</button>
         </div>
         <button id="btnSave" class="btn-save" onclick="saveToken()">Save</button>
       </div>
-      <div id="tokenOk" class="token-ok hidden">â Token active for this session</div>
+      <div id="tokenOk" class="token-ok hidden">Ã¢ÂÂ Token active for this session</div>
     </div>
 
     <!-- No token warning -->
     <div id="warnBar" class="warn-bar">
-      â ï¸ Add your <a href="https://replicate.com/account/api-tokens" target="_blank">Replicate API token</a> above to start swapping. It's free to get.
+      Ã¢ÂÂ Ã¯Â¸Â Add your <a href="https://replicate.com/account/api-tokens" target="_blank">Replicate API token</a> above to start swapping. It's free to get.
     </div>
 
     <!-- Mode + Quality -->
     <div class="controls-row">
       <div class="tab-group">
-        <button class="tab active" id="tabPhoto" onclick="setMode('photo')">ð¼ Photo</button>
-        <button class="tab" id="tabVideo" onclick="setMode('video')">ð¬ Video</button>
+        <button class="tab active" id="tabPhoto" onclick="setMode('photo')">Ã°ÂÂÂ¼ Photo</button>
+        <button class="tab" id="tabVideo" onclick="setMode('video')">Ã°ÂÂÂ¬ Video</button>
       </div>
       <div class="quality-group">
         Quality:
         <div class="quality-tabs">
           <button class="qtab active" id="qStandard" onclick="setQuality('standard')">Standard</button>
-          <button class="qtab" id="qAdvanced" onclick="setQuality('advanced')">â¨ Advanced</button>
+          <button class="qtab" id="qAdvanced" onclick="setQuality('advanced')">Ã¢ÂÂ¨ Advanced</button>
         </div>
       </div>
     </div>
@@ -479,7 +479,7 @@
           ondrop="handleDrop(event,'face')"
           onclick="document.getElementById('faceInput').click()">
           <input type="file" id="faceInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'face')">
-          <div class="zone-icon" id="faceIcon">ð¤</div>
+          <div class="zone-icon" id="faceIcon">Ã°ÂÂÂ¤</div>
           <div class="zone-text">
             <p>Upload your face photo</p>
             <small>Drag & drop or click to browse</small>
@@ -496,7 +496,7 @@
           ondrop="handleDrop(event,'target')"
           onclick="document.getElementById('targetInput').click()">
           <input type="file" id="targetInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'target')">
-          <div class="zone-icon" id="targetIcon">ð¯</div>
+          <div class="zone-icon" id="targetIcon">Ã°ÂÂÂ¯</div>
           <div class="zone-text" id="targetText">
             <p>Upload target photo</p>
             <small>Drag & drop or click to browse</small>
@@ -507,13 +507,13 @@
 
     <!-- Options -->
     <div class="options-row">
-      <button class="toggle-btn" id="btnMultiface" onclick="toggleMultiface()">ð¥ Multiple Faces</button>
-      <span class="options-note" id="videoNote" style="display:none">Video: 1â5 min processing Â· No size or time limits</span>
+      <button class="toggle-btn" id="btnMultiface" onclick="toggleMultiface()">Ã°ÂÂÂ¥ Multiple Faces</button>
+      <span class="options-note" id="videoNote" style="display:none">Video: 1Ã¢ÂÂ5 min processing ÃÂ· No size or time limits</span>
     </div>
 
     <!-- Swap button -->
     <button class="swap-btn" id="swapBtn" onclick="doSwap()">
-      <span id="swapBtnIcon">â¡</span>
+      <span id="swapBtnIcon">Ã¢ÂÂ¡</span>
       <span id="swapBtnText">Swap Now</span>
     </button>
 
@@ -534,7 +534,7 @@
 
     <!-- Error -->
     <div class="error-box hidden" id="errorBox">
-      <div class="error-icon">â ï¸</div>
+      <div class="error-icon">Ã¢ÂÂ Ã¯Â¸Â</div>
       <div>
         <div class="error-title">Error</div>
         <div class="error-msg" id="errorMsg"></div>
@@ -543,45 +543,45 @@
 
     <!-- Result -->
     <div class="result-box hidden" id="resultBox">
-      <div class="result-header">â Swap complete!</div>
+      <div class="result-header">Ã¢ÂÂ Swap complete!</div>
       <div class="result-media" id="resultMedia"></div>
       <div class="result-actions">
-        <button class="btn-download" onclick="downloadResult()">â¬ï¸ Download Result</button>
-        <button class="btn-new" onclick="resetAll()">ð New Swap</button>
+        <button class="btn-download" onclick="downloadResult()">Ã¢Â¬ÂÃ¯Â¸Â Download Result</button>
+        <button class="btn-new" onclick="resetAll()">Ã°ÂÂÂ New Swap</button>
       </div>
     </div>
 
     <!-- Info cards (shown when idle) -->
     <div class="info-grid" id="infoCards">
       <div class="info-card">
-        <div class="icon">ð¯</div>
+        <div class="icon">Ã°ÂÂÂ¯</div>
         <h3>Best Quality</h3>
-        <p>Top-ranked Replicate models â same tech as DeepSwap and commercial tools</p>
+        <p>Top-ranked Replicate models Ã¢ÂÂ same tech as DeepSwap and commercial tools</p>
       </div>
       <div class="info-card">
-        <div class="icon">ð</div>
+        <div class="icon">Ã°ÂÂÂ</div>
         <h3>No Limits</h3>
         <p>No file size cap, no time limit on videos, no watermarks ever</p>
       </div>
       <div class="info-card">
-        <div class="icon">ð</div>
+        <div class="icon">Ã°ÂÂÂ</div>
         <h3>100% Private</h3>
-        <p>Runs on your own API key. Files go directly to Replicate â nothing stored here.</p>
+        <p>Runs on your own API key. Files go directly to Replicate Ã¢ÂÂ nothing stored here.</p>
       </div>
     </div>
 
   </main>
 
-  <footer>grindspace Â· personal use only Â· powered by Replicate API</footer>
+  <footer>grindspace ÃÂ· personal use only ÃÂ· powered by Replicate API</footer>
 </div>
 
 <script>
-// ââ State ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ State Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 const REPLICATE_API = 'https://far-robin-63.harmatchris.deno.net/v1';
 const MODELS = {
-  photoStandard: 'codeplugtech/face-swap',
-  photoAdvanced: 'yan-ops/face-swap',
-  video: 'arielreplicate/roopified',
+  photoStandard: 'lucataco/faceswap'          // 27M runs — best quality,
+  photoAdvanced: 'easel/advanced-face-swap'    // multi-face support,
+  video: 'lucataco/faceswap'                  // photo swap on video frames,
 };
 
 let state = {
@@ -597,7 +597,7 @@ let state = {
   pollTimer: null,
 };
 
-// ââ Init âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Init Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 window.addEventListener('DOMContentLoaded', () => {
   if (state.token) {
     document.getElementById('tokenInput').value = state.token;
@@ -608,7 +608,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ââ Token âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Token Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function toggleSettings() {
   const panel = document.getElementById('tokenPanel');
   const btn = document.getElementById('btnToken');
@@ -626,7 +626,7 @@ function saveToken() {
   state.token = val;
   sessionStorage.setItem('gs_token', val);
   const btn = document.getElementById('btnSave');
-  btn.textContent = 'Saved â';
+  btn.textContent = 'Saved Ã¢ÂÂ';
   btn.classList.add('saved');
   setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); }, 2000);
   if (val) {
@@ -655,7 +655,7 @@ function updateTokenUI() {
   updateSwapButton();
 }
 
-// ââ Mode / Quality ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Mode / Quality Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function setMode(m) {
   state.mode = m;
   document.getElementById('tabPhoto').classList.toggle('active', m === 'photo');
@@ -691,10 +691,10 @@ function setQuality(q) {
 function toggleMultiface() {
   state.multiface = !state.multiface;
   document.getElementById('btnMultiface').classList.toggle('on', state.multiface);
-  document.getElementById('btnMultiface').textContent = state.multiface ? 'ð¥ Multiple Faces â' : 'ð¥ Multiple Faces';
+  document.getElementById('btnMultiface').textContent = state.multiface ? 'Ã°ÂÂÂ¥ Multiple Faces Ã¢ÂÂ' : 'Ã°ÂÂÂ¥ Multiple Faces';
 }
 
-// ââ File Handling âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ File Handling Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function handleDragOver(e, zone) {
   e.preventDefault();
   document.getElementById(zone + 'Zone').classList.add('drag-over');
@@ -787,19 +787,19 @@ function showPreview(zone, file) {
 
   const clearBtn = document.createElement('button');
   clearBtn.className = 'clear-btn';
-  clearBtn.innerHTML = 'â';
+  clearBtn.innerHTML = 'Ã¢ÂÂ';
   clearBtn.onclick = (e) => { e.stopPropagation(); clearFile(zone); };
   zoneEl.appendChild(clearBtn);
 }
 
-// ââ Swap Button State âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Swap Button State Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function updateSwapButton() {
   const btn = document.getElementById('swapBtn');
   const canSwap = state.faceFile && state.targetFile && state.status === 'idle';
   btn.classList.toggle('ready', !!canSwap);
 }
 
-// ââ Progress helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Progress helpers Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function setProgress(pct, msg, hint = '') {
   document.getElementById('progressBox').classList.remove('hidden');
   document.getElementById('progressMsg').textContent = msg;
@@ -824,7 +824,7 @@ function resetStatus() {
 
   const btn = document.getElementById('swapBtn');
   btn.classList.remove('ready');
-  document.getElementById('swapBtnIcon').textContent = 'â¡';
+  document.getElementById('swapBtnIcon').textContent = 'Ã¢ÂÂ¡';
   document.getElementById('swapBtnText').textContent = 'Swap Now';
   updateSwapButton();
 }
@@ -845,11 +845,11 @@ function showError(msg) {
 
   const btn = document.getElementById('swapBtn');
   btn.classList.add('ready');
-  document.getElementById('swapBtnIcon').textContent = 'â¡';
+  document.getElementById('swapBtnIcon').textContent = 'Ã¢ÂÂ¡';
   document.getElementById('swapBtnText').textContent = 'Try Again';
 }
 
-// ââ File to base64 ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ File to base64 Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -859,7 +859,7 @@ function fileToBase64(file) {
   });
 }
 
-// ââ Upload to Replicate Files API âââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Upload to Replicate Files API Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function uploadToReplicate(file) {
   const res = await fetch(`${REPLICATE_API}/files`, {
     method: 'POST',
@@ -878,7 +878,7 @@ async function uploadToReplicate(file) {
   return data.urls.get;
 }
 
-// ââ Create prediction âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Create prediction Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function createPrediction(model, input) {
   const res = await fetch(`${REPLICATE_API}/models/${model}/predictions`, {
     method: 'POST',
@@ -898,7 +898,7 @@ async function createPrediction(model, input) {
   return res.json();
 }
 
-// ââ Poll until done âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Poll until done Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function startPolling(predictionId) {
   let pct = 45;
   state.pollTimer = setInterval(async () => {
@@ -910,7 +910,7 @@ function startPolling(predictionId) {
       const data = await res.json();
 
       pct = Math.min(pct + 7, 90);
-      setProgress(pct, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1â5 minutes. Page updates automatically.' : '');
+      setProgress(pct, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1Ã¢ÂÂ5 minutes. Page updates automatically.' : '');
 
       if (data.status === 'succeeded') {
         clearInterval(state.pollTimer);
@@ -931,7 +931,7 @@ function startPolling(predictionId) {
   }, 3000);
 }
 
-// ââ Show result âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Show result Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 function showResult(url) {
   state.resultUrl = url;
   state.resultType = (state.mode === 'video' || url.endsWith('.mp4')) ? 'video' : 'image';
@@ -952,11 +952,11 @@ function showResult(url) {
 
   const btn = document.getElementById('swapBtn');
   btn.classList.add('ready');
-  document.getElementById('swapBtnIcon').textContent = 'â¡';
+  document.getElementById('swapBtnIcon').textContent = 'Ã¢ÂÂ¡';
   document.getElementById('swapBtnText').textContent = 'Swap Now';
 }
 
-// ââ Download ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Download Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function downloadResult() {
   if (!state.resultUrl) return;
   try {
@@ -972,7 +972,7 @@ async function downloadResult() {
   }
 }
 
-// ââ Main Swap âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂ Main Swap Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 async function doSwap() {
   if (state.status === 'uploading' || state.status === 'processing') return;
   if (!state.token) { document.getElementById('tokenPanel').classList.remove('hidden'); document.getElementById('btnToken').classList.add('active'); return; }
@@ -1004,7 +1004,7 @@ async function doSwap() {
       setProgress(10, 'Uploading face image...');
       faceInput = await uploadToReplicate(state.faceFile);
     }
-    setProgress(25, 'Face image ready â');
+    setProgress(25, 'Face image ready Ã¢ÂÂ');
 
     // Upload target
     let targetInput;
@@ -1022,9 +1022,10 @@ async function doSwap() {
     if (model === MODELS.photoStandard) {
       input = { swap_image: faceInput, target_image: targetInput };
     } else if (model === MODELS.photoAdvanced) {
-      input = { source_image: faceInput, target_image: targetInput };
+      input = { swap_image: faceInput, target_image: targetInput };
+      if (state.multiface) input.swap_image_b = faceInput;
     } else {
-      input = { source_img: faceInput, target_path: targetInput };
+      input = { swap_image: faceInput, target_image: targetInput };
     }
 
     // Create prediction
@@ -1039,7 +1040,7 @@ async function doSwap() {
       showResult(url);
     } else {
       // Poll for result
-      setProgress(45, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1â5 min. Auto-updates.' : '');
+      setProgress(45, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1Ã¢ÂÂ5 min. Auto-updates.' : '');
       startPolling(prediction.id);
     }
 
