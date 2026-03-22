@@ -111,15 +111,29 @@ select:focus{border-color:var(--accent)}
 .chip.done{background:rgba(34,197,94,.15);color:var(--success)}
 .chip.error{background:rgba(239,68,68,.15);color:var(--danger)}
 
-/* GHOST / SHIMMER LOADING BAR */
-.ghost-bar-wrap{height:5px;background:var(--border);border-radius:3px;overflow:hidden;display:none}
-.ghost-bar-fill{height:100%;width:0%;border-radius:3px;transition:width .8s ease-out;background:linear-gradient(90deg,var(--accent) 0%,var(--accent-l) 50%,#c084fc 100%)}
-.ghost-bar-fill.shimmering{
-  background-size:300% 100%;
-  background-image:linear-gradient(90deg,var(--accent) 0%,var(--accent-l) 40%,#c084fc 60%,var(--accent-l) 80%,var(--accent) 100%);
-  animation:shimmer 1.8s ease-in-out infinite;
-}
-.ghost-eta{font-size:10px;color:#555;text-align:right;margin-top:-8px;min-height:14px}
+/* ── SKELETON SCREEN ─────────────────────────────────────────────────────── */
+@keyframes skelMove{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes skelPulse{0%,100%{opacity:.9}50%{opacity:.55}}
+.skel-block{background:linear-gradient(90deg,var(--surface2) 25%,var(--border-h) 50%,var(--surface2) 75%);background-size:800px 100%;animation:skelMove 1.6s ease-in-out infinite;border-radius:10px}
+.skeleton-screen{display:none;flex-direction:column;gap:18px;padding:4px 0}
+.skeleton-screen.active{display:flex}
+/* big media placeholder */
+.skel-media-ph{width:100%;height:300px;border-radius:14px}
+/* progress section */
+.skel-progress{display:flex;flex-direction:column;gap:10px}
+.skel-top-row{display:flex;align-items:baseline;justify-content:space-between}
+.skel-pct{font-size:36px;font-weight:800;letter-spacing:-1px;color:var(--text);line-height:1;font-variant-numeric:tabular-nums;transition:color .4s}
+.skel-pct.done{color:var(--success)}
+.skel-eta-txt{font-size:12px;color:var(--sub)}
+/* bold progress track */
+.skel-track{height:14px;background:var(--surface2);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.skel-fill{height:100%;width:0%;border-radius:7px;background:linear-gradient(90deg,var(--accent) 0%,var(--accent-l) 45%,#c084fc 65%,var(--accent-l) 80%,var(--accent) 100%);background-size:300% 100%;animation:skelMove 1.4s linear infinite;transition:width .7s ease-out}
+.skel-fill.done{background:var(--success);animation:none}
+/* placeholder content lines */
+.skel-lines{display:flex;flex-direction:column;gap:9px;margin-top:2px}
+.skel-line{height:11px}
+/* step row beneath */
+.skel-steps-row{display:flex;flex-direction:column;gap:8px}
 
 .steps{display:flex;flex-direction:column;gap:8px}
 .step{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub)}
@@ -411,12 +425,30 @@ select:focus{border-color:var(--accent)}
   <!-- RESULT -->
   <div class="result-panel" id="result-panel">
     <div class="result-hdr">Result&nbsp;<span class="chip processing" id="res-chip">Processing</span></div>
-    <!-- Ghost shimmer bar -->
-    <div class="ghost-bar-wrap" id="ghost-wrap">
-      <div class="ghost-bar-fill shimmering" id="ghost-fill"></div>
+
+    <!-- ── SKELETON SCREEN (shown while processing) ── -->
+    <div class="skeleton-screen" id="skel-screen">
+      <!-- Shimmering media placeholder -->
+      <div class="skel-block skel-media-ph" id="skel-media-ph"></div>
+      <!-- Progress info -->
+      <div class="skel-progress">
+        <div class="skel-top-row">
+          <span class="skel-pct" id="skel-pct">0%</span>
+          <span class="skel-eta-txt" id="skel-eta-txt">Calculating&hellip;</span>
+        </div>
+        <div class="skel-track"><div class="skel-fill" id="skel-fill"></div></div>
+      </div>
+      <!-- Placeholder text lines -->
+      <div class="skel-lines">
+        <div class="skel-block skel-line" style="width:68%"></div>
+        <div class="skel-block skel-line" style="width:44%"></div>
+        <div class="skel-block skel-line" style="width:55%"></div>
+      </div>
+      <!-- Step list -->
+      <div class="skel-steps-row steps" id="res-steps"></div>
     </div>
-    <div class="ghost-eta" id="ghost-eta"></div>
-    <div class="steps" id="res-steps"></div>
+
+    <!-- ── RESULT (shown when done) ── -->
     <div class="result-media" id="res-media" style="display:none"></div>
     <div class="result-actions" id="res-actions" style="display:none">
       <a class="btn-dl" id="btn-dl" href="#" download target="_blank">
@@ -590,52 +622,77 @@ function flashSaved() {
   kw._t = setTimeout(() => { kw.classList.remove('saved'); lbl.classList.remove('show'); }, 1800);
 }
 
-// ─── Ghost Loading Bar ────────────────────────────────────────────────────────
+// ─── Skeleton Screen ──────────────────────────────────────────────────────────
 function startGhost(estimatedMs) {
   ghostEstMs = estimatedMs || 30000;
   ghostStart = Date.now();
-  const wrap = document.getElementById('ghost-wrap');
-  const fill = document.getElementById('ghost-fill');
-  wrap.style.display = 'block';
+  const screen = document.getElementById('skel-screen');
+  const fill   = document.getElementById('skel-fill');
+  const pctEl  = document.getElementById('skel-pct');
+  screen.classList.add('active');
   fill.style.transition = 'none';
-  fill.style.width = '2%';
-  fill.classList.add('shimmering');
-  document.getElementById('ghost-eta').textContent = '';
+  fill.style.width = '1%';
+  fill.classList.remove('done');
+  pctEl.classList.remove('done');
+  pctEl.textContent = '0%';
+  document.getElementById('skel-eta-txt').textContent = 'Starting\u2026';
   tickGhost();
 }
 
 function tickGhost() {
   const elapsed = Date.now() - ghostStart;
   const raw = elapsed / ghostEstMs;
-  // Ease toward 88% — never reaches 100% until done
-  const pct = 88 * (1 - Math.exp(-2.5 * raw));
-  const fill = document.getElementById('ghost-fill');
-  fill.style.transition = 'width .6s ease-out';
-  fill.style.width = Math.min(88, pct) + '%';
-  // ETA text
+  // Ease toward 88% asymptotically — never hits 100% until done
+  const pct = 88 * (1 - Math.exp(-2.8 * raw));
+  const clamped = Math.min(88, pct);
+  const fill  = document.getElementById('skel-fill');
+  const pctEl = document.getElementById('skel-pct');
+  fill.style.transition = 'width .7s ease-out';
+  fill.style.width = clamped + '%';
+  pctEl.textContent = Math.round(clamped) + '%';
+  // ETA
   const remaining = Math.max(0, Math.round((ghostEstMs - elapsed) / 1000));
-  document.getElementById('ghost-eta').textContent = remaining > 3 ? `~${remaining}s remaining` : 'Almost done…';
-  ghostRaf = setTimeout(tickGhost, 800);
+  const etaEl = document.getElementById('skel-eta-txt');
+  if (remaining > 60) {
+    const m = Math.floor(remaining / 60), s = remaining % 60;
+    etaEl.textContent = `~${m}m ${s}s remaining`;
+  } else if (remaining > 3) {
+    etaEl.textContent = `~${remaining}s remaining`;
+  } else {
+    etaEl.textContent = 'Almost done\u2026';
+  }
+  ghostRaf = setTimeout(tickGhost, 700);
 }
 
 function stopGhost(success) {
   clearTimeout(ghostRaf); ghostRaf = null;
-  const wrap = document.getElementById('ghost-wrap');
-  const fill = document.getElementById('ghost-fill');
-  fill.classList.remove('shimmering');
-  document.getElementById('ghost-eta').textContent = '';
+  const screen = document.getElementById('skel-screen');
+  const fill   = document.getElementById('skel-fill');
+  const pctEl  = document.getElementById('skel-pct');
   if (success) {
-    fill.style.transition = 'width .3s ease-out';
+    // Flash to 100% with green, then fade out skeleton and reveal result
+    fill.style.transition = 'width .35s ease-out';
     fill.style.width = '100%';
+    fill.classList.add('done');
+    pctEl.textContent = '100%';
+    pctEl.classList.add('done');
+    document.getElementById('skel-eta-txt').textContent = 'Done!';
     setTimeout(() => {
-      fill.style.transition = 'opacity .4s';
-      fill.style.opacity = '0';
-      setTimeout(() => { wrap.style.display = 'none'; fill.style.opacity = '1'; fill.style.width = '0%'; }, 450);
-    }, 400);
+      screen.style.transition = 'opacity .4s';
+      screen.style.opacity = '0';
+      setTimeout(() => {
+        screen.classList.remove('active');
+        screen.style.opacity = '';
+        screen.style.transition = '';
+        fill.style.width = '0%';
+        fill.classList.remove('done');
+        pctEl.classList.remove('done');
+      }, 420);
+    }, 550);
   } else {
-    fill.style.transition = 'width .2s';
+    screen.classList.remove('active');
     fill.style.width = '0%';
-    setTimeout(() => { wrap.style.display = 'none'; }, 300);
+    pctEl.textContent = '0%';
   }
 }
 
@@ -1273,8 +1330,13 @@ function initResult(defs) {
   document.getElementById('res-meta').textContent = '';
   document.getElementById('res-chip').textContent = 'Processing';
   document.getElementById('res-chip').className = 'chip processing';
-  document.getElementById('ghost-fill').style.opacity = '1';
-  document.getElementById('ghost-fill').style.width = '0%';
+  // Reset skeleton state
+  const skelFill = document.getElementById('skel-fill');
+  if (skelFill) { skelFill.style.width = '0%'; skelFill.classList.remove('done'); }
+  const skelPct = document.getElementById('skel-pct');
+  if (skelPct) { skelPct.textContent = '0%'; skelPct.classList.remove('done'); }
+  const skelScreen = document.getElementById('skel-screen');
+  if (skelScreen) { skelScreen.classList.remove('active'); skelScreen.style.opacity = ''; }
   const stepsEl = document.getElementById('res-steps'); stepsEl.innerHTML = '';
   const map = {};
   defs.forEach(d => {
@@ -1297,17 +1359,21 @@ function markStep(map, id, state) {
 function showResult(url, isVid, time, cost) {
   document.getElementById('res-chip').textContent = 'Done';
   document.getElementById('res-chip').className = 'chip done';
-  // Refresh balance after every swap so it stays accurate
   setTimeout(fetchBalance, 1500);
-  const med = document.getElementById('res-media');
-  med.style.display = 'block';
-  med.innerHTML = isVid
-    ? `<video src="${url}" controls autoplay loop muted playsinline></video>`
-    : `<img src="${url}" alt="result">`;
-  const dl = document.getElementById('btn-dl');
-  dl.href = url; dl.download = isVid ? 'grindspace.mp4' : 'grindspace.jpg';
-  document.getElementById('res-actions').style.display = 'flex';
-  document.getElementById('res-meta').innerHTML = `<span>&#9201; ${time}</span><span>&#128176; ${cost}</span>`;
+  // Skeleton fades out in stopGhost(true) — reveal media after that delay
+  const revealMedia = () => {
+    const med = document.getElementById('res-media');
+    med.style.display = 'block';
+    med.innerHTML = isVid
+      ? `<video src="${url}" controls autoplay loop muted playsinline></video>`
+      : `<img src="${url}" alt="result">`;
+    const dl = document.getElementById('btn-dl');
+    dl.href = url; dl.download = isVid ? 'grindspace.mp4' : 'grindspace.jpg';
+    document.getElementById('res-actions').style.display = 'flex';
+    document.getElementById('res-meta').innerHTML = `<span>&#9201; ${time}</span><span>&#128176; ${cost}</span>`;
+  };
+  // Delay matches the skeleton fade-out (550ms flash + 420ms fade = ~1s)
+  setTimeout(revealMedia, 1000);
 }
 
 function resultError(msg) {
@@ -1321,7 +1387,12 @@ function resultError(msg) {
   if (isAuth) meta.innerHTML = '<span style="color:var(--sub);font-size:11px">No credits were charged.</span>';
 }
 
-function resetResult() { document.getElementById('result-panel').classList.remove('active'); }
+function resetResult() {
+  document.getElementById('result-panel').classList.remove('active');
+  document.getElementById('skel-screen').classList.remove('active');
+  document.getElementById('res-media').style.display = 'none';
+  document.getElementById('res-actions').style.display = 'none';
+}
 
 // ─── UI Helpers ───────────────────────────────────────────────────────────────
 function setBtn(which, loading, label) {
