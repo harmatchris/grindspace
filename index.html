@@ -3,1059 +3,806 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>&#9889; grindspace &#8212; AI Face Swap</title>
+<title>&#9889; grindspace &mdash; AI Face Swap</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#141414;--surface2:#1c1c1c;--border:#252525;--border-h:#333;
+  --accent:#7c3aed;--accent-l:#a855f7;--accent-glow:rgba(124,58,237,0.4);
+  --text:#f0f0f0;--sub:#888;--danger:#ef4444;--success:#22c55e;--warn:#f59e0b;
+}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border-h);border-radius:3px}
 
-  :root {
-    --bg: #0d0d0d;
-    --surface: #1a1a1a;
-    --surface2: #222;
-    --border: #2a2a2a;
-    --border-hover: #3a3a3a;
-    --accent: #7c3aed;
-    --accent-light: #a855f7;
-    --text: #f0f0f0;
-    --subtext: #9ca3af;
-    --danger: #ef4444;
-    --success: #22c55e;
-    --warn: #f59e0b;
-  }
+header{border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:20;gap:12px}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 4px 16px var(--accent-glow)}
+.logo-text h1{font-size:14px;font-weight:700;letter-spacing:-0.3px}
+.logo-text p{font-size:10px;color:#444;margin-top:-1px}
+.header-center{flex:1;max-width:480px}
+.key-wrap{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 12px}
+.key-wrap svg{color:#555;flex-shrink:0}
+.key-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:12px;min-width:0}
+.key-wrap input::placeholder{color:#444}
+.key-wrap .sdot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex-shrink:0;transition:background .3s}
+.key-wrap .sdot.ok{background:var(--success);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  html, body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-  }
+main{max-width:920px;margin:0 auto;width:100%;padding:24px 16px;display:flex;flex-direction:column;gap:20px}
 
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: var(--surface); }
-  ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 3px; }
+.mode-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px}
+.tab{flex:1;padding:8px 0;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--sub);background:none;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 12px var(--accent-glow)}
 
-  /* &#9472;&#9472; Layout */
-  .app { display: flex; flex-direction: column; min-height: 100vh; }
+.panel{display:none;flex-direction:column;gap:16px}
+.panel.active{display:flex}
 
-  header {
-    border-bottom: 1px solid #1e1e1e;
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 10;
-  }
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.upload-grid{grid-template-columns:1fr}}
 
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-icon {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    box-shadow: 0 4px 20px rgba(124,58,237,0.35);
-    flex-shrink: 0;
-  }
-  .logo-text h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
-  .logo-text p { font-size: 10px; color: #555; margin-top: -1px; }
+.upload-zone{border:2px dashed var(--border);border-radius:14px;background:var(--surface);padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(124,58,237,.07)}
+.upload-zone.has-file{border-style:solid;border-color:var(--border-h);padding:12px}
+.uz-icon{font-size:28px;margin-bottom:10px;opacity:.5}
+.uz-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.uz-sub{font-size:11px;color:var(--sub)}
+.uz-preview{width:100%;position:relative}
+.uz-preview img,.uz-preview video{width:100%;height:170px;object-fit:cover;border-radius:10px;display:block}
+.uz-rm{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.75);border:1px solid #555;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px}
+.uz-rm:hover{background:var(--danger);border-color:var(--danger)}
+.uz-name{font-size:10px;color:var(--sub);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+input[type=file]{display:none}
 
-  .header-right { display: flex; align-items: center; gap: 10px; }
-  .status-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--danger);
-    transition: background 0.3s;
-  }
-  .status-dot.connected { background: var(--success); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-  .status-label { font-size: 11px; color: #555; }
+.video-meta{font-size:11px;color:var(--sub);background:var(--surface2);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center}
+.uprog{height:3px;background:var(--border);border-radius:2px;overflow:hidden;display:none;margin-top:6px}
+.uprog-bar{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s}
 
-  .btn-token {
-    display: flex; align-items: center; gap: 6px;
-    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--surface); color: #888; font-size: 12px; font-weight: 500;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .btn-token:hover { color: var(--text); border-color: var(--border-hover); }
-  .btn-token.active { border-color: var(--accent); background: rgba(124,58,237,0.15); color: #c4b5fd; }
+.ctrl-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sel-wrap{display:flex;align-items:center;gap:8px}
+.sel-wrap label{font-size:12px;color:var(--sub);white-space:nowrap}
+select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 28px 7px 12px;font-size:12px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23888' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+select:focus{border-color:var(--accent)}
 
-  main {
-    flex: 1;
-    max-width: 900px;
-    margin: 0 auto;
-    width: 100%;
-    padding: 28px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
+.btn-swap{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px var(--accent-glow)}
+.btn-swap:hover:not(:disabled){background:var(--accent-l);transform:translateY(-1px)}
+.btn-swap:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.spin-ico{animation:spin .8s linear infinite}
 
-  /* &#9472;&#9472; Token panel */
-  .token-panel {
-    background: #111;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    animation: fadeIn 0.25s ease-out;
-  }
-  .token-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #9ca3af;
-  }
-  .token-header a {
-    margin-left: auto;
-    color: #a78bfa;
-    font-size: 11px;
-    text-decoration: none;
-    display: flex; align-items: center; gap: 4px;
-  }
-  .token-header a:hover { color: #c4b5fd; }
-  .token-row { display: flex; gap: 8px; }
-  .token-input-wrap { position: relative; flex: 1; }
-  .token-input {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: 9px 34px 9px 12px;
-    font-size: 13px;
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .token-input:focus { border-color: var(--accent); }
-  .token-input::placeholder { color: #444; }
-  .toggle-vis {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; cursor: pointer; color: #555; font-size: 14px; padding: 2px;
-    transition: color 0.2s;
-  }
-  .toggle-vis:hover { color: #9ca3af; }
-  .btn-save {
-    padding: 9px 14px; border-radius: 9px; border: none;
-    background: rgba(124,58,237,0.3); color: #c4b5fd;
-    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-    white-space: nowrap;
-  }
-  .btn-save:hover { background: rgba(124,58,237,0.5); }
-  .btn-save.saved { background: rgba(34,197,94,0.2); color: #86efac; }
-  .token-ok { font-size: 11px; color: rgba(34,197,94,0.7); display: flex; align-items: center; gap: 5px; }
+.cost-note{font-size:11px;color:#555}
+.cost-note.warn{color:var(--warn)}
 
-  /* &#9472;&#9472; Warning */
-  .warn-bar {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; border-radius: 12px;
-    border: 1px solid rgba(245,158,11,0.25);
-    background: rgba(245,158,11,0.06);
-    font-size: 12px; color: rgba(245,158,11,0.8);
-    animation: fadeIn 0.25s ease-out;
-  }
-  .warn-bar a { color: #fbbf24; }
+.slabel{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.8px}
 
-  /* &#9472;&#9472; Mode + Quality row */
-  .controls-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
+/* MULTI-FACE */
+.mf-hint{font-size:12px;color:var(--sub);background:var(--surface2);border-radius:8px;padding:10px 14px;line-height:1.6}
+.mf-hint strong{color:var(--text)}
+.mf-canvas-wrap{border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--border);max-width:480px}
+.mf-canvas-wrap canvas{display:block;width:100%;height:auto}
+.mf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.face-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:border-color .2s}
+.face-card.assigned{border-color:var(--accent)}
+.face-thumb{width:70px;height:70px;border-radius:50%;overflow:hidden;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;color:#555;flex-shrink:0}
+.face-thumb img{width:100%;height:100%;object-fit:cover}
+.face-lbl{font-size:11px;font-weight:600;color:var(--sub);text-align:center}
+.face-assigned-wrap{display:none;flex-direction:column;align-items:center;gap:4px}
+.face-assigned-img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
+.face-assigned-nm{font-size:10px;color:var(--sub);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-assign{font-size:11px;color:var(--accent-l);cursor:pointer;background:rgba(124,58,237,.15);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;width:100%;text-align:center;transition:all .2s}
+.btn-assign:hover{background:var(--accent);color:#fff}
 
-  .tab-group {
-    display: flex; gap: 4px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 4px;
-  }
-  .tab {
-    display: flex; align-items: center; gap: 7px;
-    padding: 8px 20px; border-radius: 9px;
-    border: none; background: none;
-    color: #666; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .tab:hover { color: #bbb; }
-  .tab.active { background: rgba(124,58,237,0.5); color: #e0d2ff; }
+/* RESULT */
+.result-panel{display:none;flex-direction:column;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
+.result-panel.active{display:flex}
+.result-hdr{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.chip{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--sub)}
+.chip.processing{background:rgba(245,158,11,.15);color:var(--warn)}
+.chip.done{background:rgba(34,197,94,.15);color:var(--success)}
+.chip.error{background:rgba(239,68,68,.15);color:var(--danger)}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub)}
+.step-ico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:var(--surface2);border:1px solid var(--border)}
+.step.active .step-ico{background:rgba(245,158,11,.2);border-color:var(--warn);animation:pulse 1.5s infinite}
+.step.done .step-ico{background:rgba(34,197,94,.2);border-color:var(--success);color:var(--success)}
+.step.active{color:var(--text)}
+.result-media{border-radius:12px;overflow:hidden;background:#000}
+.result-media img,.result-media video{width:100%;max-height:520px;object-fit:contain;display:block}
+.result-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-dl{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:var(--success);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s}
+.btn-dl:hover{background:#16a34a;transform:translateY(-1px)}
+.btn-new{padding:10px 16px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:12px;cursor:pointer;transition:all .2s}
+.btn-new:hover{border-color:var(--border-h)}
+.result-meta{font-size:11px;color:#555;display:flex;gap:16px}
 
-  .quality-group {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: #666; font-weight: 500;
-  }
-  .quality-tabs {
-    display: flex; gap: 3px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 9px; padding: 3px;
-  }
-  .qtab {
-    padding: 5px 12px; border-radius: 7px; border: none;
-    background: none; color: #666; font-size: 11px; font-weight: 500;
-    cursor: pointer; transition: all 0.2s; text-transform: capitalize;
-  }
-  .qtab:hover { color: #bbb; }
-  .qtab.active { background: rgba(124,58,237,0.5); color: #e0d2ff; }
-
-  /* &#9472;&#9472; Upload panels */
-  .upload-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  @media(max-width: 600px) { .upload-grid { grid-template-columns: 1fr; } }
-
-  .upload-zone-wrap { display: flex; flex-direction: column; gap: 7px; }
-  .zone-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #555; }
-
-  .drop-zone {
-    aspect-ratio: 16/9;
-    border: 2px dashed var(--border);
-    border-radius: 14px;
-    background: var(--surface);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    overflow: hidden;
-  }
-  .drop-zone:hover { border-color: var(--accent); background: #1f1a2e; }
-  .drop-zone.drag-over { border-color: var(--accent-light); background: rgba(124,58,237,0.1); box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(124,58,237,0.25); }
-  .drop-zone.has-file { border-style: solid; border-color: var(--border); cursor: default; }
-
-  .zone-icon {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: #2a2a2a;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    transition: background 0.2s;
-  }
-  .drop-zone:hover .zone-icon, .drop-zone.drag-over .zone-icon { background: rgba(124,58,237,0.2); }
-  .zone-text { text-align: center; padding: 0 16px; }
-  .zone-text p { font-size: 13px; color: #888; font-weight: 500; }
-  .zone-text small { font-size: 11px; color: #444; display: block; margin-top: 3px; }
-
-  .preview-img, .preview-vid {
-    width: 100%; height: 100%; object-fit: contain;
-    position: absolute; top: 0; left: 0;
-  }
-  .preview-overlay {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
-    padding: 10px 12px;
-    transform: translateY(100%);
-    transition: transform 0.2s;
-  }
-  .drop-zone:hover .preview-overlay { transform: translateY(0); }
-  .preview-name { font-size: 11px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .preview-size { font-size: 10px; color: #777; }
-  .clear-btn {
-    position: absolute; top: 8px; right: 8px;
-    width: 24px; height: 24px; border-radius: 50%;
-    background: rgba(0,0,0,0.7); border: none;
-    color: #ccc; font-size: 14px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s; line-height: 1;
-  }
-  .clear-btn:hover { background: rgba(0,0,0,0.95); }
-
-  /* &#9472;&#9472; Options row */
-  .options-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .toggle-btn {
-    display: flex; align-items: center; gap: 7px;
-    padding: 8px 14px; border-radius: 9px;
-    border: 1px solid var(--border); background: var(--surface);
-    color: #666; font-size: 13px; font-weight: 500; cursor: pointer;
-    transition: all 0.2s;
-  }
-  .toggle-btn:hover { color: #aaa; border-color: var(--border-hover); }
-  .toggle-btn.on { border-color: var(--accent); background: rgba(124,58,237,0.15); color: #c4b5fd; }
-  .options-note { font-size: 11px; color: #444; }
-
-  /* &#9472;&#9472; Swap button */
-  .swap-btn {
-    width: 100%; padding: 15px;
-    border-radius: 14px; border: none;
-    background: var(--surface); border: 1px solid var(--border);
-    color: #555; font-size: 16px; font-weight: 700;
-    cursor: not-allowed; transition: all 0.25s;
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-  }
-  .swap-btn.ready {
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    border-color: transparent; color: white;
-    cursor: pointer;
-    box-shadow: 0 8px 30px rgba(124,58,237,0.35);
-  }
-  .swap-btn.ready:hover { background: linear-gradient(135deg, #6d28d9, #9333ea); transform: translateY(-1px); box-shadow: 0 12px 35px rgba(124,58,237,0.45); }
-  .swap-btn.ready:active { transform: translateY(0); }
-
-  /* &#9472;&#9472; Progress */
-  .progress-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px;
-    display: flex; flex-direction: column; gap: 10px;
-    animation: fadeIn 0.25s ease-out;
-  }
-  .progress-top { display: flex; align-items: center; justify-content: space-between; }
-  .progress-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #ccc; }
-  .progress-pct { font-size: 11px; color: #555; }
-  .progress-track {
-    height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden;
-  }
-  .progress-fill {
-    height: 100%; border-radius: 3px;
-    background: linear-gradient(90deg, #7c3aed, #a855f7);
-    transition: width 0.5s ease-out;
-  }
-  .progress-fill.done { background: var(--success); }
-  .progress-fill.error { background: var(--danger); }
-  .progress-hint { font-size: 11px; color: #444; }
-
-  /* &#9472;&#9472; Result */
-  .result-box {
-    display: flex; flex-direction: column; gap: 14px;
-    animation: fadeIn 0.3s ease-out;
-  }
-  .result-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--success); }
-  .result-media {
-    border-radius: 14px; overflow: hidden;
-    border: 1px solid var(--border); background: var(--surface);
-  }
-  .result-media img, .result-media video { width: 100%; display: block; object-fit: contain; }
-  .result-actions { display: flex; gap: 10px; }
-  .btn-download {
-    flex: 1; padding: 13px;
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    border: none; border-radius: 12px;
-    color: white; font-size: 14px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    box-shadow: 0 4px 20px rgba(124,58,237,0.3);
-  }
-  .btn-download:hover { background: linear-gradient(135deg, #6d28d9, #9333ea); }
-  .btn-new {
-    padding: 13px 16px; border-radius: 12px;
-    border: 1px solid var(--border); background: var(--surface);
-    color: #888; font-size: 13px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 7px;
-    transition: all 0.2s;
-  }
-  .btn-new:hover { color: var(--text); background: var(--surface2); }
-
-  /* &#9472;&#9472; Error */
-  .error-box {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 14px; border-radius: 12px;
-    border: 1px solid rgba(239,68,68,0.25);
-    background: rgba(239,68,68,0.06);
-    animation: fadeIn 0.25s ease-out;
-  }
-  .error-icon { color: var(--danger); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-  .error-title { font-size: 13px; font-weight: 600; color: #fca5a5; }
-  .error-msg { font-size: 12px; color: rgba(252,165,165,0.7); margin-top: 3px; line-height: 1.4; }
-
-  /* &#9472;&#9472; Info cards */
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding-top: 14px;
-    border-top: 1px solid #1e1e1e;
-  }
-  @media(max-width: 600px) { .info-grid { grid-template-columns: 1fr; } }
-  .info-card {
-    padding: 14px; border-radius: 12px;
-    border: 1px solid #1e1e1e; background: #111;
-  }
-  .info-card .icon { font-size: 20px; margin-bottom: 6px; }
-  .info-card h3 { font-size: 13px; font-weight: 600; color: #d1d5db; margin-bottom: 4px; }
-  .info-card p { font-size: 11px; color: #4b5563; line-height: 1.5; }
-
-  /* &#9472;&#9472; Footer */
-  footer {
-    border-top: 1px solid #1e1e1e;
-    padding: 12px 24px;
-    text-align: center;
-    font-size: 11px;
-    color: #333;
-  }
-
-  /* &#9472;&#9472; Spinner */
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(167,139,250,0.3);
-    border-top-color: #a78bfa;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    flex-shrink: 0;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .hidden { display: none !important; }
+.toast{position:fixed;bottom:24px;right:24px;background:#1c1c1c;border:1px solid var(--danger);border-radius:12px;padding:12px 18px;color:var(--text);font-size:13px;max-width:380px;z-index:100;display:none;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.toast.show{display:block;animation:su .3s ease}
+@keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.toast-x{float:right;margin-left:12px;cursor:pointer;color:#777;font-size:16px;line-height:1}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- Header -->
-  <header>
-    <div class="logo">
-      <div class="logo-icon">&#9889;</div>
-      <div class="logo-text">
-        <h1>grindspace</h1>
-        <p>AI Face Swap &#183; No limits &#183; No watermarks</p>
-      </div>
+<header>
+  <div class="logo">
+    <div class="logo-icon">&#9889;</div>
+    <div class="logo-text"><h1>grindspace</h1><p>AI Face Swap &mdash; WaveSpeed</p></div>
+  </div>
+  <div class="header-center">
+    <div class="key-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <input type="password" id="apiKey" placeholder="WaveSpeed API key&hellip;" autocomplete="off" spellcheck="false">
+      <div class="sdot" id="sdot"></div>
     </div>
-    <div class="header-right">
-      <div id="statusDot" class="status-dot"></div>
-      <span id="statusLabel" class="status-label">No token</span>
-      <button id="btnToken" class="btn-token" onclick="toggleSettings()">&#128273; API Token</button>
-    </div>
-  </header>
+  </div>
+</header>
 
-  <main>
+<main>
 
-    <!-- Token panel -->
-    <div id="tokenPanel" class="token-panel hidden">
-      <div class="token-header">
-        &#128273; Replicate API Token
-        <a href="https://replicate.com/account/api-tokens" target="_blank">Get free token &#8599;</a>
-      </div>
-      <div class="token-row">
-        <div class="token-input-wrap">
-          <input id="tokenInput" class="token-input" type="password"
-            placeholder="r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            onkeydown="if(event.key==='Enter') saveToken()">
-          <button class="toggle-vis" onclick="toggleVis()">&#128065;</button>
-        </div>
-        <button id="btnSave" class="btn-save" onclick="saveToken()">Save</button>
-      </div>
-      <div id="tokenOk" class="token-ok hidden">&#9989; Token active for this session</div>
-    </div>
-
-    <!-- No token warning -->
-    <div id="warnBar" class="warn-bar">
-      &#9888;&#65039; Add your <a href="https://replicate.com/account/api-tokens" target="_blank">Replicate API token</a> above to start swapping. It's free to get.
-    </div>
-
-    <!-- Mode + Quality -->
-    <div class="controls-row">
-      <div class="tab-group">
-        <button class="tab active" id="tabPhoto" onclick="setMode('photo')">&#128444; Photo</button>
-        <button class="tab" id="tabVideo" onclick="setMode('video')">&#127916; Video</button>
-      </div>
-      <div class="quality-group">
-        Quality:
-        <div class="quality-tabs">
-          <button class="qtab active" id="qStandard" onclick="setQuality('standard')">Standard</button>
-          <button class="qtab" id="qAdvanced" onclick="setQuality('advanced')">&#10024; Advanced</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Upload zones -->
-    <div class="upload-grid">
-      <!-- Face -->
-      <div class="upload-zone-wrap">
-        <span class="zone-label">Your Face</span>
-        <div class="drop-zone" id="faceZone"
-          ondragover="handleDragOver(event,'face')"
-          ondragleave="handleDragLeave('face')"
-          ondrop="handleDrop(event,'face')"
-          onclick="document.getElementById('faceInput').click()">
-          <input type="file" id="faceInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'face')">
-          <div class="zone-icon" id="faceIcon">&#128100;</div>
-          <div class="zone-text">
-            <p>Upload your face photo</p>
-            <small>Drag & drop or click to browse</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Target -->
-      <div class="upload-zone-wrap">
-        <span class="zone-label" id="targetLabel">Target Photo</span>
-        <div class="drop-zone" id="targetZone"
-          ondragover="handleDragOver(event,'target')"
-          ondragleave="handleDragLeave('target')"
-          ondrop="handleDrop(event,'target')"
-          onclick="document.getElementById('targetInput').click()">
-          <input type="file" id="targetInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'target')">
-          <div class="zone-icon" id="targetIcon">&#127919;</div>
-          <div class="zone-text" id="targetText">
-            <p>Upload target photo</p>
-            <small>Drag & drop or click to browse</small>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Options -->
-    <div class="options-row">
-      <button class="toggle-btn" id="btnMultiface" onclick="toggleMultiface()">&#128101; Multiple Faces</button>
-      <span class="options-note" id="videoNote" style="display:none">Video: 1&#8211;5 min processing &#183; No size or time limits</span>
-    </div>
-
-    <!-- Swap button -->
-    <button class="swap-btn" id="swapBtn" onclick="doSwap()">
-      <span id="swapBtnIcon">&#9889;</span>
-      <span id="swapBtnText">Swap Now</span>
+  <div class="mode-tabs">
+    <button class="tab active" data-tab="photo" onclick="switchTab('photo')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      Photo Swap
     </button>
+    <button class="tab" data-tab="video" onclick="switchTab('video')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      Video Swap
+    </button>
+    <button class="tab" data-tab="multi" onclick="switchTab('multi')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a1 1 0 0 1 0 0"/><circle cx="17" cy="17" r="4"/></svg>
+      Multi-Face
+    </button>
+  </div>
 
-    <!-- Progress -->
-    <div class="progress-box hidden" id="progressBox">
-      <div class="progress-top">
-        <div class="progress-label">
-          <div class="spinner" id="progressSpinner"></div>
-          <span id="progressMsg">Processing...</span>
-        </div>
-        <span class="progress-pct" id="progressPct">0%</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill" style="width:0%"></div>
-      </div>
-      <div class="progress-hint" id="progressHint"></div>
-    </div>
-
-    <!-- Error -->
-    <div class="error-box hidden" id="errorBox">
-      <div class="error-icon">&#9888;&#65039;</div>
+  <!-- PHOTO SWAP -->
+  <div class="panel active" id="tab-photo">
+    <div class="upload-grid">
       <div>
-        <div class="error-title">Error</div>
-        <div class="error-msg" id="errorMsg"></div>
+        <div class="slabel" style="margin-bottom:8px">Target Image</div>
+        <div class="upload-zone" id="uz-photo-target" onclick="triggerFile('inp-photo-target')">
+          <input type="file" id="inp-photo-target" accept="image/*" onchange="onFilePick(this,'photo-target')">
+          <div id="ph-photo-target-empty">
+            <div class="uz-icon">&#128247;</div>
+            <div class="uz-title">Drop target image</div>
+            <div class="uz-sub">Face here gets replaced</div>
+          </div>
+          <div id="ph-photo-target-filled" style="display:none;width:100%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="slabel" style="margin-bottom:8px">Source Face</div>
+        <div class="upload-zone" id="uz-photo-face" onclick="triggerFile('inp-photo-face')">
+          <input type="file" id="inp-photo-face" accept="image/*" onchange="onFilePick(this,'photo-face')">
+          <div id="ph-photo-face-empty">
+            <div class="uz-icon">&#128100;</div>
+            <div class="uz-title">Drop source face</div>
+            <div class="uz-sub">This face will be inserted</div>
+          </div>
+          <div id="ph-photo-face-filled" style="display:none;width:100%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <div class="sel-wrap">
+        <label>Target face:</label>
+        <select id="sel-photo-idx">
+          <option value="0">0 &mdash; Largest</option>
+          <option value="1">1 &mdash; 2nd largest</option>
+          <option value="2">2 &mdash; 3rd largest</option>
+          <option value="3">3 &mdash; 4th</option>
+          <option value="4">4 &mdash; 5th</option>
+        </select>
+      </div>
+      <button class="btn-swap" id="btn-photo" onclick="doPhotoSwap()" disabled>
+        <svg id="btn-photo-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span id="btn-photo-lbl">Swap Face</span>
+      </button>
+      <span class="cost-note">~$0.012 per image</span>
+    </div>
+  </div>
+
+  <!-- VIDEO SWAP -->
+  <div class="panel" id="tab-video">
+    <div>
+      <div class="slabel" style="margin-bottom:8px">Target Video</div>
+      <div class="upload-zone" id="uz-video-target" onclick="triggerFile('inp-video-target')">
+        <input type="file" id="inp-video-target" accept="video/*" onchange="onFilePick(this,'video-target')">
+        <div id="ph-video-target-empty">
+          <div class="uz-icon">&#127909;</div>
+          <div class="uz-title">Drop video here</div>
+          <div class="uz-sub">MP4, MOV, AVI &mdash; up to 200 MB &mdash; HD supported</div>
+        </div>
+        <div id="ph-video-target-filled" style="display:none;width:100%"></div>
+      </div>
+      <div id="video-meta" style="display:none" class="video-meta">
+        <span id="video-info"></span><span id="video-cost" class="cost-note"></span>
+      </div>
+      <div class="uprog" id="uprog"><div class="uprog-bar" id="uprog-bar"></div></div>
+    </div>
+    <div style="max-width:340px">
+      <div class="slabel" style="margin-bottom:8px">Source Face</div>
+      <div class="upload-zone" id="uz-video-face" onclick="triggerFile('inp-video-face')">
+        <input type="file" id="inp-video-face" accept="image/*" onchange="onFilePick(this,'video-face')">
+        <div id="ph-video-face-empty">
+          <div class="uz-icon">&#128100;</div>
+          <div class="uz-title">Drop source face</div>
+          <div class="uz-sub">Photo of face to insert</div>
+        </div>
+        <div id="ph-video-face-filled" style="display:none;width:100%"></div>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <div class="sel-wrap">
+        <label>Target face:</label>
+        <select id="sel-video-idx">
+          <option value="0">0 &mdash; Largest</option>
+          <option value="1">1 &mdash; 2nd largest</option>
+          <option value="2">2 &mdash; 3rd largest</option>
+          <option value="3">3 &mdash; 4th</option>
+          <option value="4">4 &mdash; 5th</option>
+        </select>
+      </div>
+      <button class="btn-swap" id="btn-video" onclick="doVideoSwap()" disabled>
+        <svg id="btn-video-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        <span id="btn-video-lbl">Swap Face</span>
+      </button>
+      <span class="cost-note">$0.01 / second of video</span>
+    </div>
+  </div>
+
+  <!-- MULTI-FACE -->
+  <div class="panel" id="tab-multi">
+    <div class="mf-hint">
+      <strong>Multi-face mode:</strong> Upload a group photo, then assign a replacement face to each person.
+      Faces are numbered by size (0&nbsp;=&nbsp;largest). Each face is swapped in sequence.
+    </div>
+    <div style="max-width:400px">
+      <div class="slabel" style="margin-bottom:8px">Target Image</div>
+      <div class="upload-zone" id="uz-multi-target" onclick="triggerFile('inp-multi-target')">
+        <input type="file" id="inp-multi-target" accept="image/*" onchange="onFilePick(this,'multi-target')">
+        <div id="ph-multi-target-empty">
+          <div class="uz-icon">&#128247;</div>
+          <div class="uz-title">Drop group photo</div>
+          <div class="uz-sub">Image with multiple faces</div>
+        </div>
+        <div id="ph-multi-target-filled" style="display:none;width:100%"></div>
       </div>
     </div>
 
-    <!-- Result -->
-    <div class="result-box hidden" id="resultBox">
-      <div class="result-header">&#9989; Swap complete!</div>
-      <div class="result-media" id="resultMedia"></div>
-      <div class="result-actions">
-        <button class="btn-download" onclick="downloadResult()">&#11015;&#65039; Download Result</button>
-        <button class="btn-new" onclick="resetAll()">&#128260; New Swap</button>
+    <div id="mf-detect-section" style="display:none">
+      <div class="slabel" style="margin-bottom:8px">Detected Faces</div>
+      <div class="mf-canvas-wrap">
+        <canvas id="mf-canvas"></canvas>
       </div>
+      <div id="mf-detect-msg" style="font-size:11px;color:var(--sub);margin-top:6px">Detecting faces&hellip;</div>
     </div>
 
-    <!-- Info cards (shown when idle) -->
-    <div class="info-grid" id="infoCards">
-      <div class="info-card">
-        <div class="icon">&#127919;</div>
-        <h3>Best Quality</h3>
-        <p>Top-ranked Replicate models &#8212; same tech as DeepSwap and commercial tools</p>
-      </div>
-      <div class="info-card">
-        <div class="icon">&#128193;</div>
-        <h3>No Limits</h3>
-        <p>No file size cap, no time limit on videos, no watermarks ever</p>
-      </div>
-      <div class="info-card">
-        <div class="icon">&#128274;</div>
-        <h3>100% Private</h3>
-        <p>Runs on your own API key. Files go directly to Replicate &#8212; nothing stored here.</p>
-      </div>
+    <div id="mf-assign-section" style="display:none">
+      <div class="slabel" style="margin-bottom:10px">Assign Replacement Faces</div>
+      <div class="mf-grid" id="mf-grid"></div>
+      <div style="font-size:11px;color:var(--sub);margin-top:6px">Only assigned faces will be swapped.</div>
     </div>
 
-  </main>
+    <div class="ctrl-row" id="mf-ctrl" style="display:none">
+      <button class="btn-swap" id="btn-multi" onclick="doMultiSwap()">
+        <svg id="btn-multi-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><circle cx="17" cy="17" r="4"/></svg>
+        <span id="btn-multi-lbl">Swap All Faces</span>
+      </button>
+      <span class="cost-note" id="mf-cost">~$0.012 per pass</span>
+    </div>
+  </div>
 
-  <footer>grindspace &#183; personal use only &#183; powered by Replicate API</footer>
+  <!-- RESULT -->
+  <div class="result-panel" id="result-panel">
+    <div class="result-hdr">Result&nbsp;<span class="chip processing" id="res-chip">Processing</span></div>
+    <div class="steps" id="res-steps"></div>
+    <div class="result-media" id="res-media" style="display:none"></div>
+    <div class="result-actions" id="res-actions" style="display:none">
+      <a class="btn-dl" id="btn-dl" href="#" download target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
+      <button class="btn-new" onclick="resetResult()">New swap</button>
+    </div>
+    <div class="result-meta" id="res-meta"></div>
+  </div>
+</main>
+
+<div class="toast" id="toast">
+  <span class="toast-x" onclick="this.parentElement.classList.remove('show')">&times;</span>
+  <span id="toast-msg"></span>
 </div>
 
 <script>
-// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-const REPLICATE_API = 'https://far-robin-63.harmatchris.deno.net/v1';
-// Model version IDs (required for /v1/predictions endpoint)
-const MODEL_VERSIONS = {
-  faceswap: '9a4298548422074c3f57258c5d544497314ae4112df80d116f0d2109e843d20d',
-};
-const MODELS = {
-  photoStandard: 'lucataco/faceswap',          // 27M runs - best quality
-  photoAdvanced: 'lucataco/faceswap',           // same model, multiface via input
-  video: 'lucataco/faceswap',                  // photo swap on video frames
-};
+const PROXY = 'https://far-robin-63.harmatchris.deno.net';
 
-let state = {
-  token: sessionStorage.getItem('gs_token') || '',
-  mode: 'photo',
-  quality: 'standard',
-  multiface: false,
-  faceFile: null,
-  targetFile: null,
-  status: 'idle',  // idle | uploading | processing | done | error
-  resultUrl: null,
-  resultType: null,
-  pollTimer: null,
-};
+// ─── State ────────────────────────────────────────────────────────────────────
+const F = {};          // key -> {file, dataUrl}
+let apiKey = localStorage.getItem('wsKey') || '';
+let busy = false;
+let mfFaces = [];      // [{idx,x,y,w,h}] sorted by size desc
+let mfAssigned = {};   // face-idx -> {file, dataUrl}
+let mfImg = null;      // HTMLImageElement of multi-target
 
-// \u2500\u2500 Init \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-window.addEventListener('DOMContentLoaded', () => {
-  if (state.token) {
-    document.getElementById('tokenInput').value = state.token;
-    updateTokenUI();
-  } else {
-    document.getElementById('tokenPanel').classList.remove('hidden');
-    document.getElementById('btnToken').classList.add('active');
-  }
+// ─── Init ─────────────────────────────────────────────────────────────────────
+const keyEl = document.getElementById('apiKey');
+keyEl.value = apiKey;
+keyEl.addEventListener('input', e => {
+  apiKey = e.target.value.trim();
+  localStorage.setItem('wsKey', apiKey);
+  dot();
 });
+dot();
+initDrop();
 
-// \u2500\u2500 Token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function toggleSettings() {
-  const panel = document.getElementById('tokenPanel');
-  const btn = document.getElementById('btnToken');
-  panel.classList.toggle('hidden');
-  btn.classList.toggle('active');
+function dot() {
+  document.getElementById('sdot').classList.toggle('ok', apiKey.length > 8);
+  checkBtns();
 }
 
-function toggleVis() {
-  const inp = document.getElementById('tokenInput');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
+  document.querySelectorAll('.panel').forEach(el => el.classList.toggle('active', el.id === 'tab-' + t));
 }
 
-function saveToken() {
-  const val = document.getElementById('tokenInput').value.trim();
-  state.token = val;
-  sessionStorage.setItem('gs_token', val);
-  const btn = document.getElementById('btnSave');
-  btn.textContent = 'Saved \u2713';
-  btn.classList.add('saved');
-  setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); }, 2000);
-  if (val) {
-    document.getElementById('tokenPanel').classList.add('hidden');
-    document.getElementById('btnToken').classList.remove('active');
+// ─── File Handling ────────────────────────────────────────────────────────────
+function triggerFile(id) { document.getElementById(id).click(); }
+
+function onFilePick(input, key) {
+  const file = input.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => { F[key] = {file, dataUrl: e.target.result}; afterLoad(key, file, e.target.result); };
+  r.readAsDataURL(file);
+}
+
+function afterLoad(key, file, dataUrl) {
+  showPreview(key, file, dataUrl);
+  if (key === 'video-target') loadVideoDuration(file, dataUrl);
+  if (key === 'multi-target') detectFaces(dataUrl);
+  checkBtns();
+}
+
+function showPreview(key, file, dataUrl) {
+  const uz = document.getElementById('uz-' + key);
+  const empty = document.getElementById('ph-' + key + '-empty');
+  const filled = document.getElementById('ph-' + key + '-filled');
+  if (!empty || !filled) return;
+
+  const isVid = file.type.startsWith('video/');
+  filled.innerHTML = `
+    <div class="uz-preview">
+      ${isVid
+        ? `<video src="${dataUrl}" muted playsinline loop autoplay></video>`
+        : `<img src="${dataUrl}" alt="">`}
+      <button class="uz-rm" onclick="removeFile('${key}',event)">&times;</button>
+    </div>
+    <div class="uz-name">${file.name} &mdash; ${fmtBytes(file.size)}</div>
+  `;
+  empty.style.display = 'none';
+  filled.style.display = 'block';
+  uz.classList.add('has-file');
+}
+
+function removeFile(key, e) {
+  if (e) e.stopPropagation();
+  delete F[key];
+  const empty = document.getElementById('ph-' + key + '-empty');
+  const filled = document.getElementById('ph-' + key + '-filled');
+  const uz = document.getElementById('uz-' + key);
+  const inp = document.getElementById('inp-' + key);
+  if (empty) empty.style.display = '';
+  if (filled) { filled.style.display = 'none'; filled.innerHTML = ''; }
+  if (uz) uz.classList.remove('has-file');
+  if (inp) inp.value = '';
+  if (key === 'multi-target') resetMF();
+  if (key === 'video-target') document.getElementById('video-meta').style.display = 'none';
+  checkBtns();
+}
+
+function loadVideoDuration(file, dataUrl) {
+  const v = document.createElement('video');
+  v.src = dataUrl;
+  v.onloadedmetadata = () => {
+    const s = Math.round(v.duration);
+    const c = (s * 0.01).toFixed(2);
+    document.getElementById('video-info').textContent = `${s}s &mdash; ${fmtBytes(file.size)}`;
+    const ce = document.getElementById('video-cost');
+    ce.textContent = `~$${c} estimated`;
+    ce.className = 'cost-note' + (parseFloat(c) > 2 ? ' warn' : '');
+    document.getElementById('video-meta').style.display = 'flex';
+  };
+}
+
+function checkBtns() {
+  document.getElementById('btn-photo').disabled = !(F['photo-target'] && F['photo-face'] && apiKey);
+  document.getElementById('btn-video').disabled = !(F['video-target'] && F['video-face'] && apiKey);
+}
+
+// ─── Drag & Drop ──────────────────────────────────────────────────────────────
+function initDrop() {
+  document.querySelectorAll('.upload-zone').forEach(z => {
+    z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag'); });
+    z.addEventListener('dragleave', () => z.classList.remove('drag'));
+    z.addEventListener('drop', e => {
+      e.preventDefault(); z.classList.remove('drag');
+      const file = e.dataTransfer.files[0]; if (!file) return;
+      const inp = z.querySelector('input[type=file]'); if (!inp) return;
+      const key = inp.id.replace('inp-', '');
+      const r = new FileReader();
+      r.onload = ev => { F[key] = {file, dataUrl: ev.target.result}; afterLoad(key, file, ev.target.result); };
+      r.readAsDataURL(file);
+    });
+  });
+}
+
+// ─── Multi-Face Detection ─────────────────────────────────────────────────────
+function resetMF() {
+  mfFaces = []; mfAssigned = {}; mfImg = null;
+  document.getElementById('mf-detect-section').style.display = 'none';
+  document.getElementById('mf-assign-section').style.display = 'none';
+  document.getElementById('mf-ctrl').style.display = 'none';
+}
+
+async function detectFaces(dataUrl) {
+  resetMF();
+  const sec = document.getElementById('mf-detect-section');
+  sec.style.display = 'block';
+  document.getElementById('mf-detect-msg').textContent = 'Loading image…';
+
+  const img = new Image();
+  img.onload = async () => {
+    mfImg = img;
+    const canvas = document.getElementById('mf-canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    document.getElementById('mf-detect-msg').textContent = 'Detecting faces…';
+
+    let detected = false;
+    if ('FaceDetector' in window) {
+      try {
+        const fd = new FaceDetector({ fastMode: false, maxDetectedFaces: 10 });
+        const results = await fd.detect(img);
+        if (results.length > 0) {
+          // Sort largest first
+          results.sort((a, b) =>
+            (b.boundingBox.width * b.boundingBox.height) - (a.boundingBox.width * a.boundingBox.height)
+          );
+          mfFaces = results.map((f, i) => ({
+            idx: i, x: f.boundingBox.x, y: f.boundingBox.y,
+            w: f.boundingBox.width, h: f.boundingBox.height
+          }));
+          drawBoxes(ctx);
+          document.getElementById('mf-detect-msg').textContent =
+            mfFaces.length + ' face' + (mfFaces.length !== 1 ? 's' : '') + ' detected';
+          detected = true;
+        }
+      } catch(e) { /* fallthrough */ }
+    }
+
+    if (!detected) {
+      // Fallback: no automatic detection, show manual slots
+      mfFaces = [];
+      document.getElementById('mf-detect-msg').textContent =
+        'Automatic detection unavailable in this browser. Use the numbered slots below (0 = largest face).';
+    }
+
+    buildFaceCards(detected ? mfFaces.length : 5);
+  };
+  img.src = dataUrl;
+}
+
+function drawBoxes(ctx) {
+  const canvas = document.getElementById('mf-canvas');
+  ctx.drawImage(mfImg, 0, 0);
+  const colors = ['#a855f7','#22c55e','#f59e0b','#3b82f6','#ef4444','#ec4899'];
+  const lw = Math.max(2, Math.round(canvas.width / 180));
+  const fs = Math.max(12, Math.round(canvas.width / 35));
+  mfFaces.forEach((f, i) => {
+    const c = colors[i % colors.length];
+    ctx.strokeStyle = c; ctx.lineWidth = lw;
+    ctx.strokeRect(f.x, f.y, f.w, f.h);
+    ctx.fillStyle = c;
+    ctx.fillRect(f.x - lw/2, f.y - fs - 6, fs + 10, fs + 8);
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${fs}px sans-serif`;
+    ctx.fillText(i, f.x + 4, f.y - 4);
+  });
+}
+
+function buildFaceCards(count) {
+  const grid = document.getElementById('mf-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    let thumbHtml = `<div class="face-thumb">${i}</div>`;
+    if (mfFaces[i] && mfImg) {
+      const tmp = document.createElement('canvas');
+      const pad = 0.35;
+      const fx = Math.max(0, mfFaces[i].x - mfFaces[i].w * pad);
+      const fy = Math.max(0, mfFaces[i].y - mfFaces[i].h * pad);
+      const fw = Math.min(mfImg.width - fx, mfFaces[i].w * (1 + pad * 2));
+      const fh = Math.min(mfImg.height - fy, mfFaces[i].h * (1 + pad * 2));
+      tmp.width = fw; tmp.height = fh;
+      tmp.getContext('2d').drawImage(mfImg, fx, fy, fw, fh, 0, 0, fw, fh);
+      thumbHtml = `<div class="face-thumb"><img src="${tmp.toDataURL()}" alt=""></div>`;
+    }
+    const lbl = ['Largest','2nd largest','3rd largest','4th','5th','6th'][i] || `Face ${i}`;
+    const card = document.createElement('div');
+    card.className = 'face-card'; card.id = `fcard-${i}`;
+    card.innerHTML = `
+      ${thumbHtml}
+      <div class="face-lbl">Face ${i} &mdash; ${lbl}</div>
+      <div class="face-assigned-wrap" id="faw-${i}">
+        <img class="face-assigned-img" id="fai-${i}" src="" alt="">
+        <div class="face-assigned-nm" id="fan-${i}"></div>
+      </div>
+      <button class="btn-assign" onclick="assignFace(${i})">+ Assign photo</button>
+      <input type="file" id="fi-${i}" accept="image/*" style="display:none" onchange="onAssign(this,${i})">
+    `;
+    grid.appendChild(card);
   }
-  updateTokenUI();
+  document.getElementById('mf-assign-section').style.display = 'block';
+  document.getElementById('mf-ctrl').style.display = 'flex';
 }
 
-function updateTokenUI() {
-  const dot = document.getElementById('statusDot');
-  const label = document.getElementById('statusLabel');
-  const warn = document.getElementById('warnBar');
-  const ok = document.getElementById('tokenOk');
-  if (state.token) {
-    dot.classList.add('connected');
-    label.textContent = 'API connected';
-    warn.classList.add('hidden');
-    ok.classList.remove('hidden');
-  } else {
-    dot.classList.remove('connected');
-    label.textContent = 'No token';
-    warn.classList.remove('hidden');
-    ok.classList.add('hidden');
-  }
-  updateSwapButton();
+function assignFace(i) { document.getElementById('fi-' + i).click(); }
+
+function onAssign(inp, i) {
+  const file = inp.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    mfAssigned[i] = {file, dataUrl: e.target.result};
+    document.getElementById('fai-' + i).src = e.target.result;
+    document.getElementById('fan-' + i).textContent = file.name;
+    document.getElementById('faw-' + i).style.display = 'flex';
+    document.getElementById('fcard-' + i).classList.add('assigned');
+    const n = Object.keys(mfAssigned).length;
+    document.getElementById('mf-cost').textContent = `~$${(n * 0.012).toFixed(3)} (${n} pass${n>1?'es':''})`;
+  };
+  r.readAsDataURL(file);
 }
 
-// \u2500\u2500 Mode / Quality \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function setMode(m) {
-  state.mode = m;
-  document.getElementById('tabPhoto').classList.toggle('active', m === 'photo');
-  document.getElementById('tabVideo').classList.toggle('active', m === 'video');
-
-  const tLabel = document.getElementById('targetLabel');
-  const tText = document.getElementById('targetText');
-  const tInput = document.getElementById('targetInput');
-  const videoNote = document.getElementById('videoNote');
-
-  if (m === 'video') {
-    tLabel.textContent = 'Target Video';
-    tText.innerHTML = '<p>Upload target video</p><small>MP4, MOV, AVI, MKV, WebM</small>';
-    tInput.accept = 'video/*';
-    videoNote.style.display = 'block';
-  } else {
-    tLabel.textContent = 'Target Photo';
-    tText.innerHTML = '<p>Upload target photo</p><small>Drag & drop or click to browse</small>';
-    tInput.accept = 'image/*';
-    videoNote.style.display = 'none';
-  }
-
-  clearFile('target');
-  resetStatus();
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function apiPost(path, body) {
+  const r = await fetch(PROXY + path, {
+    method: 'POST',
+    headers: {'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (!r.ok || (d.code && d.code >= 400)) throw new Error(d.message || d.error || `HTTP ${r.status}`);
+  return d;
 }
 
-function setQuality(q) {
-  state.quality = q;
-  document.getElementById('qStandard').classList.toggle('active', q === 'standard');
-  document.getElementById('qAdvanced').classList.toggle('active', q === 'advanced');
-}
-
-function toggleMultiface() {
-  state.multiface = !state.multiface;
-  document.getElementById('btnMultiface').classList.toggle('on', state.multiface);
-  document.getElementById('btnMultiface').textContent = state.multiface ? '\u{1F465} Multiple Faces \u2713' : '\u{1F465} Multiple Faces';
-}
-
-// \u2500\u2500 File Handling \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function handleDragOver(e, zone) {
-  e.preventDefault();
-  document.getElementById(zone + 'Zone').classList.add('drag-over');
-}
-function handleDragLeave(zone) {
-  document.getElementById(zone + 'Zone').classList.remove('drag-over');
-}
-function handleDrop(e, zone) {
-  e.preventDefault();
-  document.getElementById(zone + 'Zone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) setFile(zone, file);
-}
-function handleFileInput(e, zone) {
-  const file = e.target.files[0];
-  if (file) setFile(zone, file);
-}
-
-function setFile(zone, file) {
-  if (zone === 'face') {
-    state.faceFile = file;
-  } else {
-    state.targetFile = file;
-  }
-  showPreview(zone, file);
-  resetStatus();
-  updateSwapButton();
-}
-
-function clearFile(zone) {
-  if (zone === 'face') state.faceFile = null;
-  else state.targetFile = null;
-  const zoneEl = document.getElementById(zone + 'Zone');
-  zoneEl.classList.remove('has-file');
-
-  const icon = document.getElementById(zone + 'Icon');
-  icon.style.display = '';
-
-  // Remove preview elements
-  const img = zoneEl.querySelector('.preview-img');
-  const vid = zoneEl.querySelector('.preview-vid');
-  const ov = zoneEl.querySelector('.preview-overlay');
-  const cb = zoneEl.querySelector('.clear-btn');
-  const zoneText = zoneEl.querySelector('.zone-text');
-  if (img) img.remove();
-  if (vid) vid.remove();
-  if (ov) ov.remove();
-  if (cb) cb.remove();
-  if (zoneText) zoneText.style.display = '';
-
-  // Reset file input
-  document.getElementById(zone + 'Input').value = '';
-  updateSwapButton();
-}
-
-function showPreview(zone, file) {
-  const zoneEl = document.getElementById(zone + 'Zone');
-  zoneEl.classList.add('has-file');
-
-  const icon = document.getElementById(zone + 'Icon');
-  icon.style.display = 'none';
-
-  const zoneText = zoneEl.querySelector('.zone-text');
-  if (zoneText) zoneText.style.display = 'none';
-
-  // Remove existing preview
-  const old = zoneEl.querySelectorAll('.preview-img, .preview-vid, .preview-overlay, .clear-btn');
-  old.forEach(el => el.remove());
-
-  const url = URL.createObjectURL(file);
-
-  if (file.type.startsWith('video/')) {
-    const vid = document.createElement('video');
-    vid.className = 'preview-vid';
-    vid.src = url;
-    vid.controls = true;
-    vid.muted = true;
-    zoneEl.appendChild(vid);
-  } else {
-    const img = document.createElement('img');
-    img.className = 'preview-img';
-    img.src = url;
-    zoneEl.appendChild(img);
-  }
-
-  const overlay = document.createElement('div');
-  overlay.className = 'preview-overlay';
-  overlay.innerHTML = `<div class="preview-name">${file.name}</div><div class="preview-size">${(file.size/1024/1024).toFixed(1)} MB</div>`;
-  zoneEl.appendChild(overlay);
-
-  const clearBtn = document.createElement('button');
-  clearBtn.className = 'clear-btn';
-  clearBtn.innerHTML = '\u2715';
-  clearBtn.onclick = (e) => { e.stopPropagation(); clearFile(zone); };
-  zoneEl.appendChild(clearBtn);
-}
-
-// \u2500\u2500 Swap Button State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function updateSwapButton() {
-  const btn = document.getElementById('swapBtn');
-  const canSwap = state.faceFile && state.targetFile && state.status === 'idle';
-  btn.classList.toggle('ready', !!canSwap);
-}
-
-// \u2500\u2500 Progress helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function setProgress(pct, msg, hint = '') {
-  document.getElementById('progressBox').classList.remove('hidden');
-  document.getElementById('progressMsg').textContent = msg;
-  document.getElementById('progressPct').textContent = pct + '%';
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressHint').textContent = hint;
-  if (pct >= 100) {
-    document.getElementById('progressFill').classList.add('done');
-    document.getElementById('progressSpinner').style.display = 'none';
-  }
-}
-
-function resetStatus() {
-  state.status = 'idle';
-  if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
-  document.getElementById('progressBox').classList.add('hidden');
-  document.getElementById('errorBox').classList.add('hidden');
-  document.getElementById('resultBox').classList.add('hidden');
-  document.getElementById('infoCards').classList.remove('hidden');
-  document.getElementById('progressFill').classList.remove('done', 'error');
-  document.getElementById('progressSpinner').style.display = '';
-
-  const btn = document.getElementById('swapBtn');
-  btn.classList.remove('ready');
-  document.getElementById('swapBtnIcon').textContent = '\u26A1';
-  document.getElementById('swapBtnText').textContent = 'Swap Now';
-  updateSwapButton();
-}
-
-function resetAll() {
-  clearFile('face');
-  clearFile('target');
-  state.resultUrl = null;
-  state.resultType = null;
-  resetStatus();
-}
-
-function showError(msg) {
-  state.status = 'error';
-  document.getElementById('progressBox').classList.add('hidden');
-  document.getElementById('errorBox').classList.remove('hidden');
-  if (msg === 'BILLING_REQUIRED') {
-    document.getElementById('errorMsg').innerHTML = 'No Replicate credits. <a href="https://replicate.com/account/billing" target="_blank" style="color:#fbbf24">Add a card at replicate.com/account/billing</a> &mdash; costs less than $0.01 per swap.';
-  } else {
-    document.getElementById('errorMsg').textContent = msg;
-  }
-
-  const btn = document.getElementById('swapBtn');
-  btn.classList.add('ready');
-  document.getElementById('swapBtnIcon').textContent = '\u26A1';
-  document.getElementById('swapBtnText').textContent = 'Try Again';
-}
-
-// \u2500\u2500 File to base64 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function fileToBase64(file) {
+async function uploadVideo(file, onPct) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    const fd = new FormData(); fd.append('file', file);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', PROXY + '/api/v3/files/upload');
+    xhr.setRequestHeader('Authorization', `Bearer ${apiKey}`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable && onPct) onPct(e.loaded / e.total); };
+    xhr.onload = () => {
+      try {
+        const d = JSON.parse(xhr.responseText);
+        if (xhr.status >= 400 || (d.code && d.code >= 400)) return reject(new Error(d.message || 'Upload failed'));
+        const url = d?.data?.url || d?.url || d?.data?.file_url || d?.data?.download_url;
+        url ? resolve(url) : reject(new Error('Upload OK but no URL in response: ' + xhr.responseText.slice(0,200)));
+      } catch(e) { reject(e); }
+    };
+    xhr.onerror = () => reject(new Error('Upload network error'));
+    xhr.send(fd);
   });
 }
 
-// \u2500\u2500 Upload to Replicate Files API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-async function uploadToReplicate(file) {
-  const res = await fetch(`${REPLICATE_API}/files`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${state.token}`,
-      'Content-Type': file.type || 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="${file.name}"`,
-    },
-    body: file,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `File upload failed: ${res.status}`);
+async function poll(id, steps, stepId) {
+  for (let i = 0; i < 360; i++) {
+    await sleep(3000);
+    const r = await fetch(`${PROXY}/api/v3/predictions/${id}/result`, {
+      headers: {'Authorization': `Bearer ${apiKey}`}
+    });
+    const d = await r.json();
+    const p = d?.data;
+    if (!p) throw new Error('Empty poll response');
+    const st = (p.status || '').toLowerCase();
+    if (st === 'completed' || st === 'succeeded') {
+      const out = p.outputs || p.output;
+      const url = Array.isArray(out) ? out[0] : out;
+      if (!url) throw new Error('Completed but no output URL');
+      markStep(steps, stepId, 'done');
+      return url;
+    }
+    if (st === 'failed' || st === 'error') throw new Error(p.error || p.message || 'Prediction failed');
   }
-  const data = await res.json();
-  return data.urls.get;
+  throw new Error('Timeout after 18 minutes');
 }
 
-// \u2500\u2500 Create prediction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-async function createPrediction(model, input) {
-  // Use /v1/predictions with explicit version ID (more reliable than model endpoint)
-  const version = MODEL_VERSIONS.faceswap;
-  const res = await fetch(`${REPLICATE_API}/predictions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${state.token}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'wait=5',
-    },
-    body: JSON.stringify({ version, input }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    if (res.status === 401) throw new Error('Invalid API token. Check your Replicate token and try again.');
-    if (res.status === 402) throw new Error('BILLING_REQUIRED');
-    throw new Error(err.detail || err.message || `API error ${res.status}`);
-  }
-  return res.json();
+// ─── Photo Swap ───────────────────────────────────────────────────────────────
+async function doPhotoSwap() {
+  if (busy) return;
+  if (!apiKey) { toast('Enter WaveSpeed API key first'); return; }
+  if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
+  busy = true;
+  const t0 = Date.now();
+  setBtn('photo', true, 'Swapping…');
+  const steps = initResult([{id:'swap', label:'Running face swap'}]);
+  markStep(steps, 'swap', 'active');
+  try {
+    const d = await apiPost('/api/v3/wavespeed-ai/image-face-swap', {
+      image: F['photo-target'].dataUrl,
+      face_image: F['photo-face'].dataUrl,
+      target_index: parseInt(document.getElementById('sel-photo-idx').value),
+      output_format: 'jpeg',
+      enable_sync_mode: false
+    });
+    const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
+    const url = await poll(id, steps, 'swap');
+    showResult(url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.012');
+  } catch(e) { resultError(e.message); }
+  finally { busy = false; setBtn('photo', false, 'Swap Face'); }
 }
 
-// \u2500\u2500 Poll until done \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function startPolling(predictionId) {
-  let pct = 45;
-  state.pollTimer = setInterval(async () => {
+// ─── Video Swap ───────────────────────────────────────────────────────────────
+async function doVideoSwap() {
+  if (busy) return;
+  if (!apiKey) { toast('Enter WaveSpeed API key first'); return; }
+  if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
+  busy = true;
+  const t0 = Date.now();
+  setBtn('video', true, 'Uploading…');
+  const steps = initResult([{id:'upload',label:'Uploading video'},{id:'swap',label:'Processing face swap'}]);
+  markStep(steps, 'upload', 'active');
+  const prog = document.getElementById('uprog');
+  const bar = document.getElementById('uprog-bar');
+  prog.style.display = 'block'; bar.style.width = '0%';
+  try {
+    const videoUrl = await uploadVideo(F['video-target'].file, pct => { bar.style.width = (pct*100)+'%'; });
+    prog.style.display = 'none';
+    markStep(steps, 'upload', 'done');
+    markStep(steps, 'swap', 'active');
+    setBtn('video', true, 'Processing…');
+    const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
+      video: videoUrl,
+      face_image: F['video-face'].dataUrl,
+      target_index: parseInt(document.getElementById('sel-video-idx').value)
+    });
+    const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
+    const url = await poll(id, steps, 'swap');
+    // Get video duration for cost calc
+    let cost = '?';
     try {
-      const res = await fetch(`${REPLICATE_API}/predictions/${predictionId}`, {
-        headers: { 'Authorization': `Bearer ${state.token}` },
+      const v = document.createElement('video'); v.src = F['video-target'].dataUrl;
+      await new Promise(r => { v.onloadedmetadata = r; });
+      cost = '$' + (v.duration * 0.01).toFixed(2);
+    } catch(e) {}
+    showResult(url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
+  } catch(e) { prog.style.display='none'; resultError(e.message); }
+  finally { busy = false; setBtn('video', false, 'Swap Face'); }
+}
+
+// ─── Multi-Face Swap ──────────────────────────────────────────────────────────
+async function doMultiSwap() {
+  if (busy) return;
+  if (!apiKey) { toast('Enter WaveSpeed API key first'); return; }
+  if (!F['multi-target']) { toast('Upload target image first'); return; }
+  const idxs = Object.keys(mfAssigned).map(Number).sort((a,b) => a-b);
+  if (!idxs.length) { toast('Assign at least one source face photo first'); return; }
+  busy = true;
+  const t0 = Date.now();
+  setBtn('multi', true, 'Swapping…');
+  const steps = initResult(idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`})));
+  let current = F['multi-target'].dataUrl;
+  try {
+    for (let k = 0; k < idxs.length; k++) {
+      const i = idxs[k];
+      markStep(steps, 'f'+i, 'active');
+      const d = await apiPost('/api/v3/wavespeed-ai/image-face-swap', {
+        image: current,
+        face_image: mfAssigned[i].dataUrl,
+        target_index: i,
+        output_format: 'jpeg',
+        enable_sync_mode: false
       });
-      if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
-      const data = await res.json();
-
-      pct = Math.min(pct + 7, 90);
-      setProgress(pct, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1\u20135 minutes. Page updates automatically.' : '');
-
-      if (data.status === 'succeeded') {
-        clearInterval(state.pollTimer);
-        state.pollTimer = null;
-        const output = data.output;
-        const url = Array.isArray(output) ? output[0] : output;
-        showResult(url);
-      } else if (data.status === 'failed' || data.status === 'canceled') {
-        clearInterval(state.pollTimer);
-        state.pollTimer = null;
-        showError(data.error || 'The model failed to process your files. Try a different image.');
+      const id = d?.data?.id; if (!id) throw new Error('No prediction ID for face ' + i);
+      const url = await poll(id, steps, 'f'+i);
+      if (k < idxs.length - 1) {
+        current = await toBase64(url);  // chain: result becomes next target
+      } else {
+        current = url;
       }
-    } catch (err) {
-      clearInterval(state.pollTimer);
-      state.pollTimer = null;
-      showError(err.message || 'Lost connection during processing.');
     }
-  }, 3000);
+    const cost = '$' + (idxs.length * 0.012).toFixed(3);
+    showResult(current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', cost);
+  } catch(e) { resultError(e.message); }
+  finally { busy = false; setBtn('multi', false, 'Swap All Faces'); }
 }
 
-// \u2500\u2500 Show result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-function showResult(url) {
-  state.resultUrl = url;
-  state.resultType = (state.mode === 'video' || url.endsWith('.mp4')) ? 'video' : 'image';
-  state.status = 'done';
-
-  setProgress(100, 'Swap complete!');
-
-  const media = document.getElementById('resultMedia');
-  media.innerHTML = '';
-  if (state.resultType === 'video') {
-    media.innerHTML = `<video src="${url}" controls autoplay muted loop></video>`;
-  } else {
-    media.innerHTML = `<img src="${url}" alt="Face swap result">`;
-  }
-
-  document.getElementById('resultBox').classList.remove('hidden');
-  document.getElementById('infoCards').classList.add('hidden');
-
-  const btn = document.getElementById('swapBtn');
-  btn.classList.add('ready');
-  document.getElementById('swapBtnIcon').textContent = '\u26A1';
-  document.getElementById('swapBtnText').textContent = 'Swap Now';
+async function toBase64(url) {
+  const r = await fetch(url);
+  const b = await r.blob();
+  return new Promise(res => { const fr = new FileReader(); fr.onload = e => res(e.target.result); fr.readAsDataURL(b); });
 }
 
-// \u2500\u2500 Download \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-async function downloadResult() {
-  if (!state.resultUrl) return;
-  try {
-    const res = await fetch(state.resultUrl);
-    const blob = await res.blob();
-    const ext = state.resultType === 'video' ? 'mp4' : 'jpg';
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `grindspace_swap_${Date.now()}.${ext}`;
-    a.click();
-  } catch {
-    window.open(state.resultUrl, '_blank');
-  }
+// ─── Result Panel ─────────────────────────────────────────────────────────────
+function initResult(defs) {
+  const panel = document.getElementById('result-panel');
+  panel.classList.add('active');
+  document.getElementById('res-media').style.display = 'none';
+  document.getElementById('res-actions').style.display = 'none';
+  document.getElementById('res-meta').textContent = '';
+  document.getElementById('res-chip').textContent = 'Processing';
+  document.getElementById('res-chip').className = 'chip processing';
+  const stepsEl = document.getElementById('res-steps'); stepsEl.innerHTML = '';
+  const map = {};
+  defs.forEach(d => {
+    const el = document.createElement('div'); el.className = 'step'; el.id = 'step-'+d.id;
+    el.innerHTML = `<div class="step-ico" id="si-${d.id}">&#x25CB;</div><span>${d.label}</span>`;
+    stepsEl.appendChild(el); map[d.id] = el;
+  });
+  setTimeout(() => panel.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+  return map;
 }
 
-// \u2500\u2500 Main Swap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-async function doSwap() {
-  if (state.status === 'uploading' || state.status === 'processing') return;
-  if (!state.token) { document.getElementById('tokenPanel').classList.remove('hidden'); document.getElementById('btnToken').classList.add('active'); return; }
-  if (!state.faceFile || !state.targetFile) return;
+function markStep(map, id, state) {
+  const el = map[id]; if (!el) return;
+  el.className = 'step ' + state;
+  const ico = document.getElementById('si-'+id); if (!ico) return;
+  if (state === 'active') ico.innerHTML = '&#x25CF;';
+  else if (state === 'done') ico.innerHTML = '&#10003;';
+}
 
-  state.status = 'uploading';
-  document.getElementById('infoCards').classList.add('hidden');
-  document.getElementById('errorBox').classList.add('hidden');
-  document.getElementById('resultBox').classList.add('hidden');
-  document.getElementById('progressFill').classList.remove('done', 'error');
-  document.getElementById('progressSpinner').style.display = '';
+function showResult(url, isVid, time, cost) {
+  document.getElementById('res-chip').textContent = 'Done';
+  document.getElementById('res-chip').className = 'chip done';
+  const med = document.getElementById('res-media');
+  med.style.display = 'block';
+  med.innerHTML = isVid
+    ? `<video src="${url}" controls autoplay loop muted playsinline></video>`
+    : `<img src="${url}" alt="result">`;
+  const dl = document.getElementById('btn-dl');
+  dl.href = url; dl.download = isVid ? 'grindspace.mp4' : 'grindspace.jpg';
+  document.getElementById('res-actions').style.display = 'flex';
+  document.getElementById('res-meta').innerHTML = `<span>&#9201; ${time}</span><span>&#128176; ${cost}</span>`;
+}
 
-  const btn = document.getElementById('swapBtn');
-  btn.classList.remove('ready');
-  document.getElementById('swapBtnIcon').innerHTML = '<div class="spinner"></div>';
-  document.getElementById('swapBtnText').textContent = 'Processing...';
+function resultError(msg) {
+  document.getElementById('res-chip').textContent = 'Error';
+  document.getElementById('res-chip').className = 'chip error';
+  toast('Error: ' + msg);
+}
 
-  try {
-    const model = state.mode === 'video'
-      ? MODELS.video
-      : (state.quality === 'advanced' || state.multiface ? MODELS.photoAdvanced : MODELS.photoStandard);
+function resetResult() { document.getElementById('result-panel').classList.remove('active'); }
 
-    // Upload face
-    let faceInput;
-    if (state.faceFile.size < 10 * 1024 * 1024) {
-      setProgress(10, 'Converting face image...');
-      faceInput = await fileToBase64(state.faceFile);
+// ─── UI Helpers ───────────────────────────────────────────────────────────────
+function setBtn(which, loading, label) {
+  const btn = document.getElementById('btn-' + which);
+  const ico = document.getElementById('btn-' + which + '-ico');
+  const lbl = document.getElementById('btn-' + which + '-lbl');
+  btn.disabled = loading;
+  if (ico) {
+    if (loading) {
+      ico.setAttribute('class', 'spin-ico');
+      ico.innerHTML = '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>';
     } else {
-      setProgress(10, 'Uploading face image...');
-      faceInput = await uploadToReplicate(state.faceFile);
+      ico.setAttribute('class', '');
     }
-    setProgress(25, 'Face image ready \u2713');
-
-    // Upload target
-    let targetInput;
-    if (state.mode === 'photo' && state.targetFile.size < 10 * 1024 * 1024) {
-      setProgress(30, 'Converting target image...');
-      targetInput = await fileToBase64(state.targetFile);
-    } else {
-      setProgress(30, `Uploading target ${state.mode}... (${(state.targetFile.size/1024/1024).toFixed(0)} MB)`);
-      targetInput = await uploadToReplicate(state.targetFile);
-    }
-    setProgress(40, 'Files ready, starting AI...');
-
-    // Build input \u2014 all active models use swap_image + target_image
-    let input;
-    if (model === MODELS.photoAdvanced) {
-      input = { swap_image: faceInput, target_image: targetInput };
-      if (state.multiface) input.swap_image_b = faceInput;
-    } else {
-      // photoStandard + video (lucataco/faceswap)
-      input = { swap_image: faceInput, target_image: targetInput };
-    }
-
-    // Create prediction
-    setProgress(43, 'Sending to AI model...');
-    state.status = 'processing';
-    const prediction = await createPrediction(model, input);
-
-    // Check if already done (fast prediction with Prefer: wait=5)
-    if (prediction.status === 'succeeded') {
-      const output = prediction.output;
-      const url = Array.isArray(output) ? output[0] : output;
-      showResult(url);
-    } else {
-      // Poll for result
-      setProgress(45, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1\u20135 min. Auto-updates.' : '');
-      startPolling(prediction.id);
-    }
-
-  } catch (err) {
-    showError(err.message || 'Something went wrong. Check your API token and try again.');
   }
+  if (lbl) lbl.textContent = label;
+}
+
+function toast(msg) {
+  document.getElementById('toast-msg').textContent = msg;
+  const t = document.getElementById('toast'); t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 5000);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n/1024).toFixed(0) + ' KB';
+  return (n/1048576).toFixed(1) + ' MB';
 }
 </script>
 </body>
