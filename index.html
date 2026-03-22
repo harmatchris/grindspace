@@ -850,6 +850,46 @@ function onAssign(inp, i) {
   r.readAsDataURL(file);
 }
 
+// ─── API guards ───────────────────────────────────────────────────────────────
+// Returns an error string if the key looks wrong, null if it looks ok
+function keyFormatError() {
+  if (!apiKey || apiKey.length < 8) return 'No WaveSpeed API key entered.';
+  if (apiKey.startsWith('r8_')) return 'That looks like a Replicate key (starts with r8_). Please paste your WaveSpeed key from wavespeed.ai/accesskey.';
+  if (apiKey.startsWith('sk-')) return 'That looks like an OpenAI key. Please paste your WaveSpeed key from wavespeed.ai/accesskey.';
+  return null;
+}
+
+// Pre-flight: verify key works + check balance. Returns true if ok to proceed.
+async function preflight(minCost) {
+  const keyErr = keyFormatError();
+  if (keyErr) { toast('\u26A0\uFE0F ' + keyErr); return false; }
+  // Quick balance check
+  try {
+    const r = await fetch(PROXY + '/api/v3/balance', { headers: {'Authorization': `Bearer ${apiKey}`} });
+    const d = await r.json();
+    if (r.status === 401 || r.status === 403) {
+      toast('\u{1F512} Unauthorized \u2014 check your WaveSpeed API key at wavespeed.ai/accesskey. No credits used.');
+      return false;
+    }
+    const bal = parseFloat(d?.data?.balance ?? d?.balance ?? 0);
+    if (minCost && bal < minCost) {
+      toast(`\u26A0\uFE0F Insufficient balance ($${bal.toFixed(2)}). Need at least $${minCost.toFixed(3)}. Top up at wavespeed.ai/billing.`);
+      return false;
+    }
+    // Update the live counter with fresh value
+    const amt = document.getElementById('bal-amt');
+    const pill = document.getElementById('bal-pill');
+    amt.textContent = '$' + bal.toFixed(2);
+    if (bal >= 2) pill.className = 'balance-pill ok';
+    else if (bal >= 0.5) pill.className = 'balance-pill warn';
+    else pill.className = 'balance-pill low';
+  } catch(e) {
+    // Network error — don't block, just warn
+    toast('\u26A0\uFE0F Could not verify balance (network issue). Proceeding anyway.');
+  }
+  return true;
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function apiPost(path, body) {
   const r = await fetch(PROXY + path, {
@@ -858,6 +898,7 @@ async function apiPost(path, body) {
     body: JSON.stringify(body)
   });
   const d = await r.json();
+  if (r.status === 401 || r.status === 403) throw new Error('Unauthorized \u2014 check your API key. No credits used.');
   if (!r.ok || (d.code && d.code >= 400)) throw new Error(d.message || d.error || `HTTP ${r.status}`);
   return d;
 }
@@ -871,7 +912,8 @@ async function uploadFileXHR(file, onPct, progressBarId) {
   return new Promise((resolve, reject) => {
     const fd = new FormData(); fd.append('file', file);
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', PROXY + '/api/v3/files/upload');
+    // Correct WaveSpeed upload endpoint
+    xhr.open('POST', PROXY + '/api/v3/media/upload/binary');
     xhr.setRequestHeader('Authorization', `Bearer ${apiKey}`);
     xhr.upload.onprogress = e => {
       if (e.lengthComputable) {
@@ -889,13 +931,15 @@ async function uploadFileXHR(file, onPct, progressBarId) {
         if (wrap) wrap.style.display = 'none';
       }
       try {
+        if (xhr.status === 401 || xhr.status === 403) return reject(new Error('Unauthorized \u2014 check your API key. No credits used.'));
         const d = JSON.parse(xhr.responseText);
-        if (xhr.status >= 400 || (d.code && d.code >= 400)) return reject(new Error(d.message || 'Upload failed'));
-        const url = d?.data?.url || d?.url || d?.data?.file_url || d?.data?.download_url;
-        url ? resolve(url) : reject(new Error('Upload OK but no URL: ' + xhr.responseText.slice(0,200)));
+        if (xhr.status >= 400 || (d.code && d.code >= 400)) return reject(new Error(d.message || `Upload failed (HTTP ${xhr.status})`));
+        // WaveSpeed returns data.download_url
+        const url = d?.data?.download_url || d?.data?.url || d?.data?.file_url || d?.url;
+        url ? resolve(url) : reject(new Error('Upload succeeded but no URL in response: ' + xhr.responseText.slice(0,300)));
       } catch(e) { reject(e); }
     };
-    xhr.onerror = () => reject(new Error('Upload network error'));
+    xhr.onerror = () => reject(new Error('Upload network error — check your connection'));
     xhr.send(fd);
   });
 }
@@ -925,8 +969,8 @@ async function poll(id, steps, stepId) {
 // ─── Photo Swap ───────────────────────────────────────────────────────────────
 async function doPhotoSwap() {
   if (busy) return;
-  if (!apiKey) { toast('Enter WaveSpeed API key first'); return; }
   if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
+  if (!await preflight(0.012)) return;
   busy = true;
   const t0 = Date.now();
   setBtn('photo', true, 'Swapping\u2026');
@@ -952,8 +996,8 @@ async function doPhotoSwap() {
 // ─── Video Swap ───────────────────────────────────────────────────────────────
 async function doVideoSwap() {
   if (busy) return;
-  if (!apiKey) { toast('Enter WaveSpeed API key first'); return; }
   if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
+  if (!await preflight(0.01)) return;
   busy = true;
   const t0 = Date.now();
   setBtn('video', true, 'Uploading\u2026');
@@ -986,10 +1030,11 @@ async function doVideoSwap() {
 // ─── Multi-Face Swap ──────────────────────────────────────────────────────────
 async function doMultiSwap() {
   if (busy) return;
-  if (!apiKey) { toast('Enter WaveSpeed API key first'); return; }
   if (!F['multi-target']) { toast('Upload target first'); return; }
   const idxs = Object.keys(mfAssigned).map(Number).sort((a,b) => a-b);
   if (!idxs.length) { toast('Assign at least one source face photo first'); return; }
+  const minCost = mfIsVideo ? (mfVideoDuration * 0.01 * idxs.length) : (0.012 * idxs.length);
+  if (!await preflight(minCost)) return;
   busy = true;
   const t0 = Date.now();
   setBtn('multi', true, 'Swapping\u2026');
@@ -1118,7 +1163,12 @@ function showResult(url, isVid, time, cost) {
 function resultError(msg) {
   document.getElementById('res-chip').textContent = 'Error';
   document.getElementById('res-chip').className = 'chip error';
-  toast('Error: ' + msg);
+  const isAuth = /unauthorized|401|403/i.test(msg);
+  const suffix = isAuth ? ' \u2014 no credits charged.' : '';
+  toast('\u274C ' + msg + suffix);
+  // Also show inline in result panel
+  const meta = document.getElementById('res-meta');
+  if (isAuth) meta.innerHTML = '<span style="color:var(--sub);font-size:11px">No credits were charged.</span>';
 }
 
 function resetResult() { document.getElementById('result-panel').classList.remove('active'); }
