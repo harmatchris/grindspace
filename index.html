@@ -103,8 +103,16 @@ select:focus{border-color:var(--accent)}
 .btn-assign:hover{background:var(--accent);color:#fff}
 
 /* RESULT */
-.result-panel{display:none;flex-direction:column;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
-.result-panel.active{display:flex}
+/* JOB CARDS (parallel swap queue) */
+.jobs-container{display:flex;flex-direction:column;gap:16px}
+.job-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;animation:jobIn .35s cubic-bezier(.22,1,.36,1)}
+@keyframes jobIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.job-hdr{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.job-title{flex:1}
+.job-cancel{background:none;border:1px solid var(--border);color:var(--sub);border-radius:7px;padding:4px 10px;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.job-cancel:hover{border-color:var(--danger);color:var(--danger)}
+.job-dismiss{padding:10px 16px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:12px;cursor:pointer;transition:all .2s}
+.job-dismiss:hover{border-color:var(--border-h)}
 .result-hdr{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 .chip{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--sub)}
 .chip.processing{background:rgba(245,158,11,.15);color:var(--warn)}
@@ -422,43 +430,8 @@ select:focus{border-color:var(--accent)}
     </div>
   </div>
 
-  <!-- RESULT -->
-  <div class="result-panel" id="result-panel">
-    <div class="result-hdr">Result&nbsp;<span class="chip processing" id="res-chip">Processing</span></div>
-
-    <!-- ── SKELETON SCREEN (shown while processing) ── -->
-    <div class="skeleton-screen" id="skel-screen">
-      <!-- Shimmering media placeholder -->
-      <div class="skel-block skel-media-ph" id="skel-media-ph"></div>
-      <!-- Progress info -->
-      <div class="skel-progress">
-        <div class="skel-top-row">
-          <span class="skel-pct" id="skel-pct">0%</span>
-          <span class="skel-eta-txt" id="skel-eta-txt">Calculating&hellip;</span>
-        </div>
-        <div class="skel-track"><div class="skel-fill" id="skel-fill"></div></div>
-      </div>
-      <!-- Placeholder text lines -->
-      <div class="skel-lines">
-        <div class="skel-block skel-line" style="width:68%"></div>
-        <div class="skel-block skel-line" style="width:44%"></div>
-        <div class="skel-block skel-line" style="width:55%"></div>
-      </div>
-      <!-- Step list -->
-      <div class="skel-steps-row steps" id="res-steps"></div>
-    </div>
-
-    <!-- ── RESULT (shown when done) ── -->
-    <div class="result-media" id="res-media" style="display:none"></div>
-    <div class="result-actions" id="res-actions" style="display:none">
-      <a class="btn-dl" id="btn-dl" href="#" download target="_blank">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download
-      </a>
-      <button class="btn-new" onclick="resetResult()">New swap</button>
-    </div>
-    <div class="result-meta" id="res-meta"></div>
-  </div>
+  <!-- JOBS — parallel swap queue, each swap gets its own card -->
+  <div class="jobs-container" id="jobs-container"></div>
 </main>
 
 <div class="toast" id="toast">
@@ -552,17 +525,11 @@ function resetIdle() {
 // ─── State ────────────────────────────────────────────────────────────────────
 const F = {};
 let apiKey = localStorage.getItem('wsKey') || '';
-let busy = false;
 let mfFaces = [];
 let mfAssigned = {};
-let mfImg = null;          // HTMLImageElement (from frame or image)
-let mfIsVideo = false;     // true when multi-face is in video mode
-let mfVideoDuration = 0;   // seconds
-
-// Ghost bar state
-let ghostRaf = null;
-let ghostStart = 0;
-let ghostEstMs = 30000;
+let mfImg = null;
+let mfIsVideo = false;
+let mfVideoDuration = 0;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 const keyEl = document.getElementById('apiKey');
@@ -622,78 +589,202 @@ function flashSaved() {
   kw._t = setTimeout(() => { kw.classList.remove('saved'); lbl.classList.remove('show'); }, 1800);
 }
 
-// ─── Skeleton Screen ──────────────────────────────────────────────────────────
-function startGhost(estimatedMs) {
-  ghostEstMs = estimatedMs || 30000;
-  ghostStart = Date.now();
-  const screen = document.getElementById('skel-screen');
-  const fill   = document.getElementById('skel-fill');
-  const pctEl  = document.getElementById('skel-pct');
-  screen.classList.add('active');
-  fill.style.transition = 'none';
-  fill.style.width = '1%';
-  fill.classList.remove('done');
-  pctEl.classList.remove('done');
-  pctEl.textContent = '0%';
-  document.getElementById('skel-eta-txt').textContent = 'Starting\u2026';
-  tickGhost();
+// ─── Job System (parallel swap cards) ────────────────────────────────────────
+const jobs = new Map();
+let jobSeq = 0;
+
+function createJob(title) {
+  const jid = 'j' + (++jobSeq);
+  const job = { id: jid, title, ghostTimer: null, ghostStart: 0, ghostEstMs: 30000, cancelled: false };
+  jobs.set(jid, job);
+  _renderJobCard(job);
+  return job;
 }
 
-function tickGhost() {
-  const elapsed = Date.now() - ghostStart;
-  const raw = elapsed / ghostEstMs;
-  // Ease toward 88% asymptotically — never hits 100% until done
-  const pct = 88 * (1 - Math.exp(-2.8 * raw));
+function _renderJobCard(job) {
+  const jid = job.id;
+  const card = document.createElement('div');
+  card.className = 'job-card'; card.id = jid;
+  card.innerHTML = `
+    <div class="job-hdr">
+      <span class="job-title">${job.title}</span>
+      <span class="chip processing" id="${jid}-chip">Processing</span>
+      <button class="job-cancel" id="${jid}-cancel" onclick="cancelJob('${jid}')">&#x2715; Cancel</button>
+    </div>
+    <div class="skeleton-screen active" id="${jid}-skel">
+      <div class="skel-block skel-media-ph"></div>
+      <div class="skel-progress">
+        <div class="skel-top-row">
+          <span class="skel-pct" id="${jid}-pct">0%</span>
+          <span class="skel-eta-txt" id="${jid}-eta">Starting\u2026</span>
+        </div>
+        <div class="skel-track"><div class="skel-fill" id="${jid}-fill"></div></div>
+      </div>
+      <div class="skel-lines">
+        <div class="skel-block skel-line" style="width:68%"></div>
+        <div class="skel-block skel-line" style="width:44%"></div>
+        <div class="skel-block skel-line" style="width:55%"></div>
+      </div>
+      <div class="steps" id="${jid}-steps"></div>
+    </div>
+    <div class="result-media" id="${jid}-media" style="display:none"></div>
+    <div class="result-actions" id="${jid}-actions" style="display:none">
+      <a class="btn-dl" id="${jid}-dl" href="#" download target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
+      <button class="job-dismiss" onclick="removeJob('${jid}')">Dismiss</button>
+    </div>
+    <div class="result-meta" id="${jid}-meta"></div>`;
+  document.getElementById('jobs-container').prepend(card);
+  setTimeout(() => card.scrollIntoView({ behavior:'smooth', block:'nearest' }), 60);
+}
+
+function jobSteps(job, defs) {
+  const el = document.getElementById(job.id + '-steps');
+  el.innerHTML = '';
+  const map = {};
+  defs.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'step'; row.id = job.id + '-st-' + d.id;
+    row.innerHTML = `<div class="step-ico" id="${job.id}-si-${d.id}">&#x25CB;</div><span>${d.label}</span>`;
+    el.appendChild(row); map[d.id] = row;
+  });
+  return map;
+}
+
+function markJobStep(job, map, id, state) {
+  const row = map[id]; if (!row) return;
+  row.className = 'step ' + state;
+  const ico = document.getElementById(job.id + '-si-' + id); if (!ico) return;
+  if (state === 'active') ico.innerHTML = '&#x25CF;';
+  else if (state === 'done') ico.innerHTML = '&#10003;';
+}
+
+// Show upload progress on job card (0–1) — caps bar at 85% to leave room for processing
+function setJobUploadPct(job, pct) {
+  const fill  = document.getElementById(job.id + '-fill');
+  const pctEl = document.getElementById(job.id + '-pct');
+  const eta   = document.getElementById(job.id + '-eta');
+  if (fill)  { fill.style.transition = 'width .2s'; fill.style.width = (pct * 85) + '%'; }
+  if (pctEl) pctEl.textContent = Math.round(pct * 85) + '%';
+  if (eta)   eta.textContent = 'Uploading\u2026 ' + Math.round(pct * 100) + '%';
+}
+
+function startJobGhost(job, estimatedMs) {
+  job.ghostEstMs = estimatedMs || 30000;
+  job.ghostStart = Date.now();
+  const fill  = document.getElementById(job.id + '-fill');
+  const pctEl = document.getElementById(job.id + '-pct');
+  if (fill)  { fill.style.transition = 'none'; fill.style.width = '2%'; fill.classList.remove('done'); }
+  if (pctEl) { pctEl.textContent = '2%'; pctEl.classList.remove('done'); }
+  _tickJobGhost(job);
+}
+
+function _tickJobGhost(job) {
+  if (job.cancelled) return;
+  const elapsed = Date.now() - job.ghostStart;
+  const pct = 88 * (1 - Math.exp(-2.8 * (elapsed / job.ghostEstMs)));
   const clamped = Math.min(88, pct);
-  const fill  = document.getElementById('skel-fill');
-  const pctEl = document.getElementById('skel-pct');
-  fill.style.transition = 'width .7s ease-out';
-  fill.style.width = clamped + '%';
-  pctEl.textContent = Math.round(clamped) + '%';
-  // ETA
-  const remaining = Math.max(0, Math.round((ghostEstMs - elapsed) / 1000));
-  const etaEl = document.getElementById('skel-eta-txt');
-  if (remaining > 60) {
-    const m = Math.floor(remaining / 60), s = remaining % 60;
-    etaEl.textContent = `~${m}m ${s}s remaining`;
-  } else if (remaining > 3) {
-    etaEl.textContent = `~${remaining}s remaining`;
-  } else {
-    etaEl.textContent = 'Almost done\u2026';
+  const fill  = document.getElementById(job.id + '-fill');
+  const pctEl = document.getElementById(job.id + '-pct');
+  if (fill)  { fill.style.transition = 'width .7s ease-out'; fill.style.width = clamped + '%'; }
+  if (pctEl) pctEl.textContent = Math.round(clamped) + '%';
+  const remaining = Math.max(0, Math.round((job.ghostEstMs - elapsed) / 1000));
+  const eta = document.getElementById(job.id + '-eta');
+  if (eta) {
+    if (remaining > 60) {
+      const m = Math.floor(remaining / 60), s = remaining % 60;
+      eta.textContent = `~${m}m ${s < 10 ? '0'+s : s}s remaining`;
+    } else if (remaining > 3) {
+      eta.textContent = `~${remaining}s remaining`;
+    } else {
+      eta.textContent = 'Almost done\u2026';
+    }
   }
-  ghostRaf = setTimeout(tickGhost, 700);
+  job.ghostTimer = setTimeout(() => _tickJobGhost(job), 700);
 }
 
-function stopGhost(success) {
-  clearTimeout(ghostRaf); ghostRaf = null;
-  const screen = document.getElementById('skel-screen');
-  const fill   = document.getElementById('skel-fill');
-  const pctEl  = document.getElementById('skel-pct');
+function stopJobGhost(job, success) {
+  clearTimeout(job.ghostTimer); job.ghostTimer = null;
+  const skel  = document.getElementById(job.id + '-skel');
+  const fill  = document.getElementById(job.id + '-fill');
+  const pctEl = document.getElementById(job.id + '-pct');
+  const eta   = document.getElementById(job.id + '-eta');
   if (success) {
-    // Flash to 100% with green, then fade out skeleton and reveal result
-    fill.style.transition = 'width .35s ease-out';
-    fill.style.width = '100%';
-    fill.classList.add('done');
-    pctEl.textContent = '100%';
-    pctEl.classList.add('done');
-    document.getElementById('skel-eta-txt').textContent = 'Done!';
+    if (fill)  { fill.style.transition = 'width .35s ease-out'; fill.style.width = '100%'; fill.classList.add('done'); }
+    if (pctEl) { pctEl.textContent = '100%'; pctEl.classList.add('done'); }
+    if (eta)   eta.textContent = 'Done!';
     setTimeout(() => {
-      screen.style.transition = 'opacity .4s';
-      screen.style.opacity = '0';
+      if (skel) { skel.style.transition = 'opacity .4s'; skel.style.opacity = '0'; }
       setTimeout(() => {
-        screen.classList.remove('active');
-        screen.style.opacity = '';
-        screen.style.transition = '';
-        fill.style.width = '0%';
-        fill.classList.remove('done');
-        pctEl.classList.remove('done');
+        if (skel) { skel.classList.remove('active'); skel.style.opacity = ''; skel.style.transition = ''; }
+        if (fill) { fill.style.width = '0%'; fill.classList.remove('done'); }
+        if (pctEl) pctEl.classList.remove('done');
       }, 420);
     }, 550);
   } else {
-    screen.classList.remove('active');
-    fill.style.width = '0%';
-    pctEl.textContent = '0%';
+    if (skel) skel.classList.remove('active');
+    if (fill) fill.style.width = '0%';
   }
+}
+
+function showJobResult(job, url, isVid, time, cost) {
+  const chip   = document.getElementById(job.id + '-chip');
+  const cancel = document.getElementById(job.id + '-cancel');
+  if (chip)   { chip.textContent = 'Done'; chip.className = 'chip done'; }
+  if (cancel) cancel.style.display = 'none';
+  setTimeout(fetchBalance, 1500);
+  setTimeout(() => {
+    const med     = document.getElementById(job.id + '-media');
+    const dl      = document.getElementById(job.id + '-dl');
+    const actions = document.getElementById(job.id + '-actions');
+    const meta    = document.getElementById(job.id + '-meta');
+    if (med) { med.style.display = 'block'; med.innerHTML = isVid ? `<video src="${url}" controls autoplay loop muted playsinline></video>` : `<img src="${url}" alt="result">`; }
+    if (dl)      { dl.href = url; dl.download = isVid ? 'grindspace.mp4' : 'grindspace.jpg'; }
+    if (actions) actions.style.display = 'flex';
+    if (meta)    meta.innerHTML = `<span>&#9201; ${time}</span><span>&#128176; ${cost}</span>`;
+  }, 1000);
+}
+
+function jobError(job, msg) {
+  clearTimeout(job.ghostTimer); job.ghostTimer = null;
+  const chip   = document.getElementById(job.id + '-chip');
+  const cancel = document.getElementById(job.id + '-cancel');
+  const skel   = document.getElementById(job.id + '-skel');
+  const actions = document.getElementById(job.id + '-actions');
+  const dl     = document.getElementById(job.id + '-dl');
+  const meta   = document.getElementById(job.id + '-meta');
+  if (chip)   { chip.textContent = 'Error'; chip.className = 'chip error'; }
+  if (cancel) cancel.style.display = 'none';
+  if (skel)   skel.classList.remove('active');
+  if (actions) actions.style.display = 'flex';
+  if (dl)     dl.style.display = 'none';
+  const isAuth = /unauthorized|401|403/i.test(msg);
+  toast('\u274C ' + msg + (isAuth ? ' \u2014 no credits charged.' : ''));
+  if (meta && isAuth) meta.innerHTML = '<span style="color:var(--sub);font-size:11px">No credits were charged.</span>';
+}
+
+function cancelJob(jid) {
+  const job = jobs.get(jid); if (!job) return;
+  job.cancelled = true;
+  clearTimeout(job.ghostTimer);
+  const chip   = document.getElementById(jid + '-chip');
+  const skel   = document.getElementById(jid + '-skel');
+  const cancel = document.getElementById(jid + '-cancel');
+  const actions = document.getElementById(jid + '-actions');
+  const dl     = document.getElementById(jid + '-dl');
+  if (chip)   { chip.textContent = 'Cancelled'; chip.className = 'chip'; }
+  if (skel)   skel.classList.remove('active');
+  if (cancel) cancel.style.display = 'none';
+  if (actions) { actions.style.display = 'flex'; if (dl) dl.style.display = 'none'; }
+}
+
+function removeJob(jid) {
+  const card = document.getElementById(jid); if (!card) return;
+  card.style.transition = 'opacity .3s,transform .3s';
+  card.style.opacity = '0'; card.style.transform = 'translateY(-10px)';
+  setTimeout(() => { card.remove(); jobs.delete(jid); }, 320);
 }
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
@@ -1151,39 +1242,51 @@ function _xhrUpload(endpoint, file, onPct, progressBarId) {
   });
 }
 
-async function poll(id, steps, stepId) {
-  for (let i = 0; i < 400; i++) {
+// ─── Poll — wall-clock timeout, cancel-aware, live status ────────────────────
+async function poll(predId, job, steps, stepId) {
+  const deadline = Date.now() + 35 * 60 * 1000; // hard 35-min wall-clock limit
+  for (let i = 0; i < 800; i++) {
+    if (job.cancelled) throw new Error('Cancelled');
+    if (Date.now() > deadline) throw new Error('WaveSpeed took over 35 min \u2014 job may be stuck. Try a shorter video or check wavespeed.ai status.');
     await sleep(3000);
-    const r = await fetch(`${PROXY}/api/v3/predictions/${id}/result`, {
-      headers: {'Authorization': `Bearer ${apiKey}`}
-    });
-    const d = await r.json();
+    if (job.cancelled) throw new Error('Cancelled');
+    let d;
+    try {
+      const r = await fetch(`${PROXY}/api/v3/predictions/${predId}/result`, { headers:{'Authorization':`Bearer ${apiKey}`} });
+      d = await r.json();
+    } catch(e) { continue; } // transient blip — keep trying
     const p = d?.data;
-    if (!p) throw new Error('Empty poll response');
+    if (!p) continue;
     const st = (p.status || '').toLowerCase();
+    // Show live WaveSpeed queue/processing status in the job ETA field
+    const eta = document.getElementById(job.id + '-eta');
+    if (eta) {
+      if (st === 'queued' || st === 'pending') eta.textContent = 'Waiting in WaveSpeed queue\u2026';
+      else if (st === 'processing' || st === 'running') eta.textContent = 'WaveSpeed is processing\u2026';
+    }
     if (st === 'completed' || st === 'succeeded') {
       const out = p.outputs || p.output;
       const url = Array.isArray(out) ? out[0] : out;
       if (!url) throw new Error('Completed but no output URL');
-      markStep(steps, stepId, 'done');
+      markJobStep(job, steps, stepId, 'done');
       return url;
     }
     if (st === 'failed' || st === 'error') throw new Error(p.error || p.message || 'Prediction failed');
   }
-  throw new Error('Timeout after 20 minutes');
+  throw new Error('Timeout');
 }
 
 // ─── Photo Swap ───────────────────────────────────────────────────────────────
 async function doPhotoSwap() {
-  if (busy) return;
   if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
-  if (!await preflight(0.012)) return;
-  busy = true;
+  setBtn('photo', true, 'Starting\u2026');
+  if (!await preflight(0.012)) { setBtn('photo', false, 'Swap Face'); return; }
+  setBtn('photo', false, 'Swap Face'); // re-enable — job runs in background
   const t0 = Date.now();
-  setBtn('photo', true, 'Swapping\u2026');
-  const steps = initResult([{id:'swap', label:'Running face swap'}]);
-  startGhost(20000); // ~20s for an image swap
-  markStep(steps, 'swap', 'active');
+  const job = createJob('Photo Swap');
+  const steps = jobSteps(job, [{id:'swap', label:'Running face swap'}]);
+  startJobGhost(job, 20000);
+  markJobStep(job, steps, 'swap', 'active');
   try {
     const d = await apiPost('/api/v3/wavespeed-ai/image-face-swap', {
       image: F['photo-target'].dataUrl,
@@ -1193,126 +1296,112 @@ async function doPhotoSwap() {
       enable_sync_mode: false
     });
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
-    const url = await poll(id, steps, 'swap');
-    stopGhost(true);
-    showResult(url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.012');
-  } catch(e) { stopGhost(false); resultError(e.message); }
-  finally { busy = false; setBtn('photo', false, 'Swap Face'); }
+    const url = await poll(id, job, steps, 'swap');
+    if (job.cancelled) return;
+    stopJobGhost(job, true);
+    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.012');
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
 // ─── Video Swap ───────────────────────────────────────────────────────────────
 async function doVideoSwap() {
-  if (busy) return;
   if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
-  if (!await preflight(0.01)) return;
-  busy = true;
+  setBtn('video', true, 'Starting\u2026');
+  if (!await preflight(0.01)) { setBtn('video', false, 'Swap Face'); return; }
+  setBtn('video', false, 'Swap Face'); // re-enable immediately
   const t0 = Date.now();
-  setBtn('video', true, 'Uploading\u2026');
-  const steps = initResult([{id:'upload',label:'Uploading video'},{id:'swap',label:'Processing face swap'}]);
-  markStep(steps, 'upload', 'active');
+  const job = createJob('Video Swap');
+  const steps = jobSteps(job, [{id:'upload', label:'Uploading video'}, {id:'swap', label:'Processing face swap'}]);
+  markJobStep(job, steps, 'upload', 'active');
   try {
-    const videoUrl = await uploadFileXHR(F['video-target'].file, null, 'uprog');
-    markStep(steps, 'upload', 'done');
-    markStep(steps, 'swap', 'active');
-    setBtn('video', true, 'Processing\u2026');
-    // Estimate processing time: ~3x video duration + buffer
+    // Upload — feed progress into the job card skeleton bar
+    const videoUrl = await uploadFileXHR(F['video-target'].file, pct => setJobUploadPct(job, pct), 'uprog');
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    markJobStep(job, steps, 'swap', 'active');
     let estSecs = 60;
-    try { const v = document.createElement('video'); v.src = F['video-target'].dataUrl; await new Promise(r=>{v.onloadedmetadata=r;}); estSecs = v.duration * 3 + 15; } catch(e){}
-    startGhost(estSecs * 1000);
+    try { const v = document.createElement('video'); v.src = F['video-target'].dataUrl; await new Promise(r=>{v.onloadedmetadata=r;}); estSecs = Math.max(30, v.duration * 5 + 20); } catch(e){}
+    startJobGhost(job, estSecs * 1000);
     const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
       video: videoUrl,
       face_image: F['video-face'].dataUrl,
       target_index: parseInt(document.getElementById('sel-video-idx').value)
     });
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
-    const url = await poll(id, steps, 'swap');
-    stopGhost(true);
+    const url = await poll(id, job, steps, 'swap');
+    if (job.cancelled) return;
+    stopJobGhost(job, true);
     let cost = '?';
     try { const v2 = document.createElement('video'); v2.src = F['video-target'].dataUrl; await new Promise(r=>{v2.onloadedmetadata=r;}); cost = '$'+(v2.duration*0.01).toFixed(2); } catch(e){}
-    showResult(url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
-  } catch(e) { stopGhost(false); resultError(e.message); }
-  finally { busy = false; setBtn('video', false, 'Swap Face'); }
+    showJobResult(job, url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
 // ─── Multi-Face Swap ──────────────────────────────────────────────────────────
 async function doMultiSwap() {
-  if (busy) return;
   if (!F['multi-target']) { toast('Upload target first'); return; }
   const idxs = Object.keys(mfAssigned).map(Number).sort((a,b) => a-b);
   if (!idxs.length) { toast('Assign at least one source face photo first'); return; }
   const minCost = mfIsVideo ? (mfVideoDuration * 0.01 * idxs.length) : (0.012 * idxs.length);
-  if (!await preflight(minCost)) return;
-  busy = true;
+  setBtn('multi', true, 'Starting\u2026');
+  if (!await preflight(minCost)) { setBtn('multi', false, 'Swap All Faces'); return; }
+  setBtn('multi', false, 'Swap All Faces');
   const t0 = Date.now();
-  setBtn('multi', true, 'Swapping\u2026');
-
-  if (mfIsVideo) {
-    await doMultiSwapVideo(idxs, t0);
-  } else {
-    await doMultiSwapImage(idxs, t0);
-  }
+  if (mfIsVideo) await doMultiSwapVideo(idxs, t0);
+  else           await doMultiSwapImage(idxs, t0);
 }
 
 async function doMultiSwapImage(idxs, t0) {
-  const stepDefs = idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`}));
-  const steps = initResult(stepDefs);
-  startGhost(idxs.length * 20000);
+  const job = createJob(`Multi-Face Swap (${idxs.length} face${idxs.length>1?'s':''})`);
+  const steps = jobSteps(job, idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`})));
+  startJobGhost(job, idxs.length * 22000);
   let current = F['multi-target'].dataUrl;
   try {
     for (let k = 0; k < idxs.length; k++) {
       const i = idxs[k];
-      markStep(steps, 'f'+i, 'active');
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'f'+i, 'active');
       const d = await apiPost('/api/v3/wavespeed-ai/image-face-swap', {
-        image: current,
-        face_image: mfAssigned[i].dataUrl,
-        target_index: i,
-        output_format: 'jpeg',
-        enable_sync_mode: false
+        image: current, face_image: mfAssigned[i].dataUrl,
+        target_index: i, output_format: 'jpeg', enable_sync_mode: false
       });
       const id = d?.data?.id; if (!id) throw new Error('No prediction ID for face ' + i);
-      const url = await poll(id, steps, 'f'+i);
+      const url = await poll(id, job, steps, 'f'+i);
+      if (job.cancelled) return;
       current = (k < idxs.length - 1) ? await toBase64(url) : url;
     }
-    stopGhost(true);
-    showResult(current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$'+(idxs.length*0.012).toFixed(3));
-  } catch(e) { stopGhost(false); resultError(e.message); }
-  finally { busy = false; setBtn('multi', false, 'Swap All Faces'); }
+    stopJobGhost(job, true);
+    showJobResult(job, current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$'+(idxs.length*0.012).toFixed(3));
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
 async function doMultiSwapVideo(idxs, t0) {
-  const stepDefs = [
+  const job = createJob(`Multi-Face Video (${idxs.length} face${idxs.length>1?'s':''})`);
+  const steps = jobSteps(job, [
     {id:'upload', label:'Uploading video'},
-    ...idxs.map(i => ({id:'f'+i, label:`Swapping face ${i} in video`}))
-  ];
-  const steps = initResult(stepDefs);
-  markStep(steps, 'upload', 'active');
-
+    ...idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`}))
+  ]);
+  markJobStep(job, steps, 'upload', 'active');
   try {
-    // Upload original video
-    const origUrl = await uploadFileXHR(F['multi-target'].file, null, 'mf-uprog');
-    markStep(steps, 'upload', 'done');
-
-    const estSecs = mfVideoDuration * 3 * idxs.length + 20;
-    startGhost(estSecs * 1000);
-
+    const origUrl = await uploadFileXHR(F['multi-target'].file, pct => setJobUploadPct(job, pct), 'mf-uprog');
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    startJobGhost(job, Math.max(30, mfVideoDuration * 5 * idxs.length + 20) * 1000);
     let currentUrl = origUrl;
     for (let k = 0; k < idxs.length; k++) {
       const i = idxs[k];
-      markStep(steps, 'f'+i, 'active');
-      setBtn('multi', true, `Processing face ${i}\u2026`);
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'f'+i, 'active');
       const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
-        video: currentUrl,
-        face_image: mfAssigned[i].dataUrl,
-        target_index: i
+        video: currentUrl, face_image: mfAssigned[i].dataUrl, target_index: i
       });
       const id = d?.data?.id; if (!id) throw new Error('No prediction ID for face ' + i);
-      currentUrl = await poll(id, steps, 'f'+i);
+      currentUrl = await poll(id, job, steps, 'f'+i);
+      if (job.cancelled) return;
     }
-    stopGhost(true);
-    const cost = '$' + (idxs.length * mfVideoDuration * 0.01).toFixed(2);
-    showResult(currentUrl, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
-  } catch(e) { stopGhost(false); resultError(e.message); }
-  finally { busy = false; setBtn('multi', false, 'Swap All Faces'); }
+    stopJobGhost(job, true);
+    showJobResult(job, currentUrl, true, Math.round((Date.now()-t0)/1000)+'s total', '$'+(idxs.length*mfVideoDuration*0.01).toFixed(2));
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
 async function toBase64(url) {
@@ -1321,78 +1410,7 @@ async function toBase64(url) {
   return new Promise(res => { const fr = new FileReader(); fr.onload = e => res(e.target.result); fr.readAsDataURL(b); });
 }
 
-// ─── Result Panel ─────────────────────────────────────────────────────────────
-function initResult(defs) {
-  const panel = document.getElementById('result-panel');
-  panel.classList.add('active');
-  document.getElementById('res-media').style.display = 'none';
-  document.getElementById('res-actions').style.display = 'none';
-  document.getElementById('res-meta').textContent = '';
-  document.getElementById('res-chip').textContent = 'Processing';
-  document.getElementById('res-chip').className = 'chip processing';
-  // Reset skeleton state
-  const skelFill = document.getElementById('skel-fill');
-  if (skelFill) { skelFill.style.width = '0%'; skelFill.classList.remove('done'); }
-  const skelPct = document.getElementById('skel-pct');
-  if (skelPct) { skelPct.textContent = '0%'; skelPct.classList.remove('done'); }
-  const skelScreen = document.getElementById('skel-screen');
-  if (skelScreen) { skelScreen.classList.remove('active'); skelScreen.style.opacity = ''; }
-  const stepsEl = document.getElementById('res-steps'); stepsEl.innerHTML = '';
-  const map = {};
-  defs.forEach(d => {
-    const el = document.createElement('div'); el.className = 'step'; el.id = 'step-'+d.id;
-    el.innerHTML = `<div class="step-ico" id="si-${d.id}">&#x25CB;</div><span>${d.label}</span>`;
-    stepsEl.appendChild(el); map[d.id] = el;
-  });
-  setTimeout(() => panel.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
-  return map;
-}
-
-function markStep(map, id, state) {
-  const el = map[id]; if (!el) return;
-  el.className = 'step ' + state;
-  const ico = document.getElementById('si-'+id); if (!ico) return;
-  if (state === 'active') ico.innerHTML = '&#x25CF;';
-  else if (state === 'done') ico.innerHTML = '&#10003;';
-}
-
-function showResult(url, isVid, time, cost) {
-  document.getElementById('res-chip').textContent = 'Done';
-  document.getElementById('res-chip').className = 'chip done';
-  setTimeout(fetchBalance, 1500);
-  // Skeleton fades out in stopGhost(true) — reveal media after that delay
-  const revealMedia = () => {
-    const med = document.getElementById('res-media');
-    med.style.display = 'block';
-    med.innerHTML = isVid
-      ? `<video src="${url}" controls autoplay loop muted playsinline></video>`
-      : `<img src="${url}" alt="result">`;
-    const dl = document.getElementById('btn-dl');
-    dl.href = url; dl.download = isVid ? 'grindspace.mp4' : 'grindspace.jpg';
-    document.getElementById('res-actions').style.display = 'flex';
-    document.getElementById('res-meta').innerHTML = `<span>&#9201; ${time}</span><span>&#128176; ${cost}</span>`;
-  };
-  // Delay matches the skeleton fade-out (550ms flash + 420ms fade = ~1s)
-  setTimeout(revealMedia, 1000);
-}
-
-function resultError(msg) {
-  document.getElementById('res-chip').textContent = 'Error';
-  document.getElementById('res-chip').className = 'chip error';
-  const isAuth = /unauthorized|401|403/i.test(msg);
-  const suffix = isAuth ? ' \u2014 no credits charged.' : '';
-  toast('\u274C ' + msg + suffix);
-  // Also show inline in result panel
-  const meta = document.getElementById('res-meta');
-  if (isAuth) meta.innerHTML = '<span style="color:var(--sub);font-size:11px">No credits were charged.</span>';
-}
-
-function resetResult() {
-  document.getElementById('result-panel').classList.remove('active');
-  document.getElementById('skel-screen').classList.remove('active');
-  document.getElementById('res-media').style.display = 'none';
-  document.getElementById('res-actions').style.display = 'none';
-}
+// (old single-panel result functions replaced by job system above)
 
 // ─── UI Helpers ───────────────────────────────────────────────────────────────
 function setBtn(which, loading, label) {
