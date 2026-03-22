@@ -160,9 +160,53 @@ select:focus{border-color:var(--accent)}
 .balance-pill.loading .bal-icon{display:none}
 .btn-topup{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 2px 10px var(--accent-glow)}
 .btn-topup:hover{background:var(--accent-l);transform:translateY(-1px)}
+.btn-lock{display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--sub);border-radius:9px;font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-lock:hover{border-color:var(--danger);color:var(--danger)}
+
+/* LOGIN OVERLAY */
+.login-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:24px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.login-logo{width:52px;height:52px;background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px var(--accent-glow)}
+.login-title{font-size:20px;font-weight:700;letter-spacing:-.5px;text-align:center}
+.login-sub{font-size:12px;color:var(--sub);text-align:center;margin-top:-16px}
+.login-fields{display:flex;flex-direction:column;gap:10px;width:100%}
+.login-field{display:flex;flex-direction:column;gap:5px}
+.login-field label{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.6px}
+.login-field input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;padding:10px 14px;outline:none;transition:border-color .2s;width:100%}
+.login-field input:focus{border-color:var(--accent)}
+.login-err{font-size:12px;color:var(--danger);text-align:center;min-height:16px;opacity:0;transition:opacity .2s}
+.login-err.show{opacity:1}
+.btn-login{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px var(--accent-glow)}
+.btn-login:hover{background:var(--accent-l);transform:translateY(-1px)}
+.btn-login:active{transform:none}
+.login-idle-msg{font-size:11px;color:var(--warn);text-align:center;display:none}
+.login-idle-msg.show{display:block}
+@keyframes loginShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 </style>
 </head>
 <body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">&#9889;</div>
+    <div class="login-title">grindspace</div>
+    <div class="login-sub">AI Face Swap &mdash; sign in to continue</div>
+    <div class="login-idle-msg" id="login-idle-msg">Session expired due to inactivity.</div>
+    <div class="login-fields">
+      <div class="login-field">
+        <label>Username</label>
+        <input type="text" id="login-user" autocomplete="username" spellcheck="false" placeholder="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-pass" autocomplete="current-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+    </div>
+    <div class="login-err" id="login-err"></div>
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
 
 <header>
   <div class="logo">
@@ -188,6 +232,10 @@ select:focus{border-color:var(--accent)}
     <a class="btn-topup" href="https://wavespeed.ai/billing" target="_blank" rel="noopener">
       + Top up
     </a>
+    <button class="btn-lock" id="btn-lock" onclick="doLogout()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Lock
+    </button>
   </div>
 </header>
 
@@ -389,6 +437,86 @@ select:focus{border-color:var(--accent)}
 <script>
 const PROXY = 'https://far-robin-63.harmatchris.deno.net';
 
+// ─── Auth / Session ───────────────────────────────────────────────────────────
+const AUTH_USER = 'rolfseinvater';
+const AUTH_PASS = '9009';
+const SESSION_TS_KEY = 'gs_session_ts';
+const IDLE_MS = 3600000; // 1 hour in ms
+let idleTimer = null;
+
+function checkAuth() {
+  const ts = parseInt(localStorage.getItem(SESSION_TS_KEY) || '0');
+  const valid = ts > 0 && (Date.now() - ts) < IDLE_MS;
+  if (valid) {
+    onAuthed();
+  } else {
+    if (ts > 0) document.getElementById('login-idle-msg').classList.add('show');
+    document.getElementById('login-overlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('login-user').focus(), 80);
+  }
+}
+
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  if (u === AUTH_USER && p === AUTH_PASS) {
+    err.classList.remove('show'); err.textContent = '';
+    localStorage.setItem(SESSION_TS_KEY, Date.now().toString());
+    document.getElementById('login-overlay').style.display = 'none';
+    onAuthed();
+  } else {
+    err.textContent = 'Incorrect username or password.';
+    err.classList.add('show');
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+    // Shake animation
+    const box = document.querySelector('.login-box');
+    box.style.animation = 'none';
+    box.offsetHeight; // reflow
+    box.style.animation = 'loginShake .35s ease';
+  }
+}
+
+function onAuthed() {
+  startIdleWatch();
+  const lockBtn = document.getElementById('btn-lock');
+  if (lockBtn) { lockBtn.style.display = 'inline-flex'; }
+}
+
+function doLogout() {
+  clearTimeout(idleTimer);
+  localStorage.removeItem(SESSION_TS_KEY);
+  document.getElementById('btn-lock').style.display = 'none';
+  document.getElementById('login-idle-msg').classList.remove('show');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').classList.remove('show');
+  document.getElementById('login-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('login-user').focus(), 80);
+}
+
+function startIdleWatch() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    document.getElementById('login-idle-msg').classList.add('show');
+    document.getElementById('btn-lock').style.display = 'none';
+    localStorage.removeItem(SESSION_TS_KEY);
+    document.getElementById('login-overlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('login-user').focus(), 80);
+  }, IDLE_MS);
+}
+
+function resetIdle() {
+  if (!localStorage.getItem(SESSION_TS_KEY)) return;
+  localStorage.setItem(SESSION_TS_KEY, Date.now().toString());
+  startIdleWatch();
+}
+
+['mousemove','keydown','click','touchstart','scroll'].forEach(ev =>
+  document.addEventListener(ev, resetIdle, { passive: true })
+);
+
 // ─── State ────────────────────────────────────────────────────────────────────
 const F = {};
 let apiKey = localStorage.getItem('wsKey') || '';
@@ -415,6 +543,7 @@ keyEl.addEventListener('input', e => {
 });
 dot();
 initDrop();
+checkAuth();
 
 function dot() {
   document.getElementById('sdot').classList.toggle('ok', apiKey.length > 8);
@@ -903,43 +1032,64 @@ async function apiPost(path, body) {
   return d;
 }
 
+// Try direct API first (single hop = faster, no proxy timeout risk).
+// If CORS blocks it (status 0), fall back to the Deno proxy automatically.
 async function uploadFileXHR(file, onPct, progressBarId) {
   if (progressBarId) {
     const wrap = document.getElementById(progressBarId);
     const bar = document.getElementById(progressBarId + '-bar');
-    if (wrap) { wrap.style.display = 'block'; bar.style.width = '0%'; }
+    if (wrap) { wrap.style.display = 'block'; if (bar) bar.style.width = '0%'; }
   }
+  const endpoints = [
+    'https://api.wavespeed.ai/api/v3/media/upload/binary',  // direct — fastest
+    PROXY + '/api/v3/media/upload/binary'                   // proxy fallback
+  ];
+  for (let i = 0; i < endpoints.length; i++) {
+    try {
+      return await _xhrUpload(endpoints[i], file, onPct, progressBarId);
+    } catch(e) {
+      if (e.isCorsBlock && i < endpoints.length - 1) {
+        // CORS blocked on direct — reset bar, try proxy
+        if (progressBarId) { const b = document.getElementById(progressBarId + '-bar'); if (b) b.style.width = '0%'; }
+        continue;
+      }
+      if (progressBarId) { const w = document.getElementById(progressBarId); if (w) w.style.display = 'none'; }
+      throw e;
+    }
+  }
+}
+
+function _xhrUpload(endpoint, file, onPct, progressBarId) {
   return new Promise((resolve, reject) => {
     const fd = new FormData(); fd.append('file', file);
     const xhr = new XMLHttpRequest();
-    // Correct WaveSpeed upload endpoint
-    xhr.open('POST', PROXY + '/api/v3/media/upload/binary');
+    xhr.open('POST', endpoint);
     xhr.setRequestHeader('Authorization', `Bearer ${apiKey}`);
+    xhr.timeout = 600000; // 10-minute safety net for large files
     xhr.upload.onprogress = e => {
-      if (e.lengthComputable) {
-        const pct = e.loaded / e.total;
-        if (onPct) onPct(pct);
-        if (progressBarId) {
-          const bar = document.getElementById(progressBarId + '-bar');
-          if (bar) bar.style.width = (pct * 100) + '%';
-        }
-      }
+      if (!e.lengthComputable) return;
+      const pct = e.loaded / e.total;
+      if (onPct) onPct(pct);
+      if (progressBarId) { const b = document.getElementById(progressBarId + '-bar'); if (b) b.style.width = (pct*100)+'%'; }
     };
     xhr.onload = () => {
-      if (progressBarId) {
-        const wrap = document.getElementById(progressBarId);
-        if (wrap) wrap.style.display = 'none';
-      }
+      if (progressBarId) { const w = document.getElementById(progressBarId); if (w) w.style.display = 'none'; }
       try {
         if (xhr.status === 401 || xhr.status === 403) return reject(new Error('Unauthorized \u2014 check your API key. No credits used.'));
         const d = JSON.parse(xhr.responseText);
         if (xhr.status >= 400 || (d.code && d.code >= 400)) return reject(new Error(d.message || `Upload failed (HTTP ${xhr.status})`));
-        // WaveSpeed returns data.download_url
         const url = d?.data?.download_url || d?.data?.url || d?.data?.file_url || d?.url;
         url ? resolve(url) : reject(new Error('Upload succeeded but no URL in response: ' + xhr.responseText.slice(0,300)));
-      } catch(e) { reject(e); }
+      } catch(e2) { reject(e2); }
     };
-    xhr.onerror = () => reject(new Error('Upload network error — check your connection'));
+    xhr.onerror = () => {
+      const err = new Error(xhr.status === 0
+        ? 'CORS block \u2014 switching to proxy\u2026'
+        : 'Upload network error \u2014 check your connection');
+      err.isCorsBlock = (xhr.status === 0);
+      reject(err);
+    };
+    xhr.ontimeout = () => reject(new Error('Upload timed out after 10 min. Try a smaller file or check your connection.'));
     xhr.send(fd);
   });
 }
