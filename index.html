@@ -578,9 +578,13 @@
 <script>
 // \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const REPLICATE_API = 'https://far-robin-63.harmatchris.deno.net/v1';
+// Model version IDs (required for /v1/predictions endpoint)
+const MODEL_VERSIONS = {
+  faceswap: '9a4298548422074c3f57258c5d544497314ae4112df80d116f0d2109e843d20d',
+};
 const MODELS = {
-  photoStandard: 'lucataco/faceswap',          // 27M runs \u2014 best quality
-  photoAdvanced: 'easel/advanced-face-swap',    // multi-face support
+  photoStandard: 'lucataco/faceswap',          // 27M runs - best quality
+  photoAdvanced: 'lucataco/faceswap',           // same model, multiface via input
   video: 'lucataco/faceswap',                  // photo swap on video frames
 };
 
@@ -841,7 +845,11 @@ function showError(msg) {
   state.status = 'error';
   document.getElementById('progressBox').classList.add('hidden');
   document.getElementById('errorBox').classList.remove('hidden');
-  document.getElementById('errorMsg').textContent = msg;
+  if (msg === 'BILLING_REQUIRED') {
+    document.getElementById('errorMsg').innerHTML = 'No Replicate credits. <a href="https://replicate.com/account/billing" target="_blank" style="color:#fbbf24">Add a card at replicate.com/account/billing</a> &mdash; costs less than $0.01 per swap.';
+  } else {
+    document.getElementById('errorMsg').textContent = msg;
+  }
 
   const btn = document.getElementById('swapBtn');
   btn.classList.add('ready');
@@ -880,20 +888,22 @@ async function uploadToReplicate(file) {
 
 // \u2500\u2500 Create prediction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function createPrediction(model, input) {
-  const res = await fetch(`${REPLICATE_API}/models/${model}/predictions`, {
+  // Use /v1/predictions with explicit version ID (more reliable than model endpoint)
+  const version = MODEL_VERSIONS.faceswap;
+  const res = await fetch(`${REPLICATE_API}/predictions`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${state.token}`,
       'Content-Type': 'application/json',
       'Prefer': 'wait=5',
     },
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ version, input }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     if (res.status === 401) throw new Error('Invalid API token. Check your Replicate token and try again.');
-    if (res.status === 402) throw new Error('Your Replicate credits ran out. Add a card at replicate.com/account/billing');
-    throw new Error(err.detail || `API error ${res.status}`);
+    if (res.status === 402) throw new Error('BILLING_REQUIRED');
+    throw new Error(err.detail || err.message || `API error ${res.status}`);
   }
   return res.json();
 }
