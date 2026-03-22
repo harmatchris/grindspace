@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>&#9889; grindspace &mdash; AI Face Swap</title>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -20,14 +21,19 @@ header{border-bottom:1px solid var(--border);padding:12px 24px;display:flex;alig
 .logo-text h1{font-size:14px;font-weight:700;letter-spacing:-0.3px}
 .logo-text p{font-size:10px;color:#444;margin-top:-1px}
 .header-center{flex:1;max-width:480px}
-.key-wrap{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 12px}
+.key-wrap{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 12px;transition:border-color .2s}
+.key-wrap.saved{border-color:var(--success)}
 .key-wrap svg{color:#555;flex-shrink:0}
 .key-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:12px;min-width:0}
 .key-wrap input::placeholder{color:#444}
-.key-wrap .sdot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex-shrink:0;transition:background .3s}
-.key-wrap .sdot.ok{background:var(--success);animation:pulse 2s infinite}
+.key-saved-label{font-size:10px;color:var(--success);font-weight:600;opacity:0;transition:opacity .3s;white-space:nowrap}
+.key-saved-label.show{opacity:1}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex-shrink:0;transition:background .3s}
+.sdot.ok{background:var(--success);animation:pulse 2s infinite}
+
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 main{max-width:920px;margin:0 auto;width:100%;padding:24px 16px;display:flex;flex-direction:column;gap:20px}
 
@@ -72,8 +78,12 @@ select:focus{border-color:var(--accent)}
 
 .cost-note{font-size:11px;color:#555}
 .cost-note.warn{color:var(--warn)}
-
 .slabel{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.8px}
+
+/* TYPE TOGGLE (multi-face image vs video) */
+.type-toggle{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;width:fit-content}
+.type-btn{padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;color:var(--sub);background:none;transition:all .15s}
+.type-btn.active{background:var(--accent);color:#fff}
 
 /* MULTI-FACE */
 .mf-hint{font-size:12px;color:var(--sub);background:var(--surface2);border-radius:8px;padding:10px 14px;line-height:1.6}
@@ -93,13 +103,24 @@ select:focus{border-color:var(--accent)}
 .btn-assign:hover{background:var(--accent);color:#fff}
 
 /* RESULT */
-.result-panel{display:none;flex-direction:column;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
+.result-panel{display:none;flex-direction:column;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
 .result-panel.active{display:flex}
 .result-hdr{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 .chip{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--sub)}
 .chip.processing{background:rgba(245,158,11,.15);color:var(--warn)}
 .chip.done{background:rgba(34,197,94,.15);color:var(--success)}
 .chip.error{background:rgba(239,68,68,.15);color:var(--danger)}
+
+/* GHOST / SHIMMER LOADING BAR */
+.ghost-bar-wrap{height:5px;background:var(--border);border-radius:3px;overflow:hidden;display:none}
+.ghost-bar-fill{height:100%;width:0%;border-radius:3px;transition:width .8s ease-out;background:linear-gradient(90deg,var(--accent) 0%,var(--accent-l) 50%,#c084fc 100%)}
+.ghost-bar-fill.shimmering{
+  background-size:300% 100%;
+  background-image:linear-gradient(90deg,var(--accent) 0%,var(--accent-l) 40%,#c084fc 60%,var(--accent-l) 80%,var(--accent) 100%);
+  animation:shimmer 1.8s ease-in-out infinite;
+}
+.ghost-eta{font-size:10px;color:#555;text-align:right;margin-top:-8px;min-height:14px}
+
 .steps{display:flex;flex-direction:column;gap:8px}
 .step{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub)}
 .step-ico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:var(--surface2);border:1px solid var(--border)}
@@ -129,9 +150,10 @@ select:focus{border-color:var(--accent)}
     <div class="logo-text"><h1>grindspace</h1><p>AI Face Swap &mdash; WaveSpeed</p></div>
   </div>
   <div class="header-center">
-    <div class="key-wrap">
+    <div class="key-wrap" id="key-wrap">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <input type="password" id="apiKey" placeholder="WaveSpeed API key&hellip;" autocomplete="off" spellcheck="false">
+      <span class="key-saved-label" id="key-saved">Saved &#10003;</span>
       <div class="sdot" id="sdot"></div>
     </div>
   </div>
@@ -149,7 +171,7 @@ select:focus{border-color:var(--accent)}
       Video Swap
     </button>
     <button class="tab" data-tab="multi" onclick="switchTab('multi')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a1 1 0 0 1 0 0"/><circle cx="17" cy="17" r="4"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><circle cx="17" cy="17" r="4"/></svg>
       Multi-Face
     </button>
   </div>
@@ -252,12 +274,22 @@ select:focus{border-color:var(--accent)}
 
   <!-- MULTI-FACE -->
   <div class="panel" id="tab-multi">
-    <div class="mf-hint">
-      <strong>Multi-face mode:</strong> Upload a group photo, then assign a replacement face to each person.
+    <div class="mf-hint" id="mf-hint">
+      <strong>Multi-face mode:</strong> Upload a group photo or video, then assign a replacement face to each person.
       Faces are numbered by size (0&nbsp;=&nbsp;largest). Each face is swapped in sequence.
     </div>
+
+    <!-- Image / Video toggle -->
+    <div>
+      <div class="slabel" style="margin-bottom:8px">Media type</div>
+      <div class="type-toggle">
+        <button class="type-btn active" id="mf-type-img" onclick="setMFType('image')">&#128247; Photo</button>
+        <button class="type-btn" id="mf-type-vid" onclick="setMFType('video')">&#127909; Video</button>
+      </div>
+    </div>
+
     <div style="max-width:400px">
-      <div class="slabel" style="margin-bottom:8px">Target Image</div>
+      <div class="slabel" style="margin-bottom:8px" id="mf-target-lbl">Target Image</div>
       <div class="upload-zone" id="uz-multi-target" onclick="triggerFile('inp-multi-target')">
         <input type="file" id="inp-multi-target" accept="image/*" onchange="onFilePick(this,'multi-target')">
         <div id="ph-multi-target-empty">
@@ -267,6 +299,10 @@ select:focus{border-color:var(--accent)}
         </div>
         <div id="ph-multi-target-filled" style="display:none;width:100%"></div>
       </div>
+      <div id="mf-video-meta" style="display:none" class="video-meta">
+        <span id="mf-video-info"></span><span id="mf-video-cost" class="cost-note"></span>
+      </div>
+      <div class="uprog" id="mf-uprog"><div class="uprog-bar" id="mf-uprog-bar"></div></div>
     </div>
 
     <div id="mf-detect-section" style="display:none">
@@ -295,6 +331,11 @@ select:focus{border-color:var(--accent)}
   <!-- RESULT -->
   <div class="result-panel" id="result-panel">
     <div class="result-hdr">Result&nbsp;<span class="chip processing" id="res-chip">Processing</span></div>
+    <!-- Ghost shimmer bar -->
+    <div class="ghost-bar-wrap" id="ghost-wrap">
+      <div class="ghost-bar-fill shimmering" id="ghost-fill"></div>
+    </div>
+    <div class="ghost-eta" id="ghost-eta"></div>
     <div class="steps" id="res-steps"></div>
     <div class="result-media" id="res-media" style="display:none"></div>
     <div class="result-actions" id="res-actions" style="display:none">
@@ -317,12 +358,19 @@ select:focus{border-color:var(--accent)}
 const PROXY = 'https://far-robin-63.harmatchris.deno.net';
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const F = {};          // key -> {file, dataUrl}
+const F = {};
 let apiKey = localStorage.getItem('wsKey') || '';
 let busy = false;
-let mfFaces = [];      // [{idx,x,y,w,h}] sorted by size desc
-let mfAssigned = {};   // face-idx -> {file, dataUrl}
-let mfImg = null;      // HTMLImageElement of multi-target
+let mfFaces = [];
+let mfAssigned = {};
+let mfImg = null;          // HTMLImageElement (from frame or image)
+let mfIsVideo = false;     // true when multi-face is in video mode
+let mfVideoDuration = 0;   // seconds
+
+// Ghost bar state
+let ghostRaf = null;
+let ghostStart = 0;
+let ghostEstMs = 30000;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 const keyEl = document.getElementById('apiKey');
@@ -331,6 +379,7 @@ keyEl.addEventListener('input', e => {
   apiKey = e.target.value.trim();
   localStorage.setItem('wsKey', apiKey);
   dot();
+  flashSaved();
 });
 dot();
 initDrop();
@@ -340,10 +389,99 @@ function dot() {
   checkBtns();
 }
 
+function flashSaved() {
+  if (apiKey.length < 8) return;
+  const kw = document.getElementById('key-wrap');
+  const lbl = document.getElementById('key-saved');
+  kw.classList.add('saved'); lbl.classList.add('show');
+  clearTimeout(kw._t);
+  kw._t = setTimeout(() => { kw.classList.remove('saved'); lbl.classList.remove('show'); }, 1800);
+}
+
+// ─── Ghost Loading Bar ────────────────────────────────────────────────────────
+function startGhost(estimatedMs) {
+  ghostEstMs = estimatedMs || 30000;
+  ghostStart = Date.now();
+  const wrap = document.getElementById('ghost-wrap');
+  const fill = document.getElementById('ghost-fill');
+  wrap.style.display = 'block';
+  fill.style.transition = 'none';
+  fill.style.width = '2%';
+  fill.classList.add('shimmering');
+  document.getElementById('ghost-eta').textContent = '';
+  tickGhost();
+}
+
+function tickGhost() {
+  const elapsed = Date.now() - ghostStart;
+  const raw = elapsed / ghostEstMs;
+  // Ease toward 88% — never reaches 100% until done
+  const pct = 88 * (1 - Math.exp(-2.5 * raw));
+  const fill = document.getElementById('ghost-fill');
+  fill.style.transition = 'width .6s ease-out';
+  fill.style.width = Math.min(88, pct) + '%';
+  // ETA text
+  const remaining = Math.max(0, Math.round((ghostEstMs - elapsed) / 1000));
+  document.getElementById('ghost-eta').textContent = remaining > 3 ? `~${remaining}s remaining` : 'Almost done…';
+  ghostRaf = setTimeout(tickGhost, 800);
+}
+
+function stopGhost(success) {
+  clearTimeout(ghostRaf); ghostRaf = null;
+  const wrap = document.getElementById('ghost-wrap');
+  const fill = document.getElementById('ghost-fill');
+  fill.classList.remove('shimmering');
+  document.getElementById('ghost-eta').textContent = '';
+  if (success) {
+    fill.style.transition = 'width .3s ease-out';
+    fill.style.width = '100%';
+    setTimeout(() => {
+      fill.style.transition = 'opacity .4s';
+      fill.style.opacity = '0';
+      setTimeout(() => { wrap.style.display = 'none'; fill.style.opacity = '1'; fill.style.width = '0%'; }, 450);
+    }, 400);
+  } else {
+    fill.style.transition = 'width .2s';
+    fill.style.width = '0%';
+    setTimeout(() => { wrap.style.display = 'none'; }, 300);
+  }
+}
+
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 function switchTab(t) {
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === t));
   document.querySelectorAll('.panel').forEach(el => el.classList.toggle('active', el.id === 'tab-' + t));
+}
+
+// ─── Multi-face type toggle ───────────────────────────────────────────────────
+function setMFType(type) {
+  mfIsVideo = (type === 'video');
+  document.getElementById('mf-type-img').classList.toggle('active', !mfIsVideo);
+  document.getElementById('mf-type-vid').classList.toggle('active', mfIsVideo);
+
+  // Update upload zone
+  const inp = document.getElementById('inp-multi-target');
+  inp.accept = mfIsVideo ? 'video/*' : 'image/*';
+
+  const lbl = document.getElementById('mf-target-lbl');
+  lbl.textContent = mfIsVideo ? 'Target Video' : 'Target Image';
+
+  const empty = document.getElementById('ph-multi-target-empty');
+  empty.querySelector('.uz-icon').textContent = mfIsVideo ? '\u{1F3A5}' : '\u{1F4F7}';
+  empty.querySelector('.uz-title').textContent = mfIsVideo ? 'Drop group video' : 'Drop group photo';
+  empty.querySelector('.uz-sub').textContent = mfIsVideo
+    ? 'Video with multiple faces \u2014 up to 200 MB'
+    : 'Image with multiple faces';
+
+  // Clear current upload and detection
+  removeFile('multi-target');
+
+  const hint = document.getElementById('mf-hint');
+  if (mfIsVideo) {
+    hint.innerHTML = '<strong>Multi-face video mode:</strong> Upload a video with multiple people. A frame is extracted for face detection. Assign a replacement face photo to each person &mdash; the video will be processed sequentially for each face.';
+  } else {
+    hint.innerHTML = '<strong>Multi-face mode:</strong> Upload a group photo, then assign a replacement face to each person. Faces are numbered by size (0&nbsp;=&nbsp;largest). Each face is swapped in sequence.';
+  }
 }
 
 // ─── File Handling ────────────────────────────────────────────────────────────
@@ -358,30 +496,36 @@ function onFilePick(input, key) {
 
 function afterLoad(key, file, dataUrl) {
   showPreview(key, file, dataUrl);
-  if (key === 'video-target') loadVideoDuration(file, dataUrl);
-  if (key === 'multi-target') detectFaces(dataUrl);
+  if (key === 'video-target') loadVideoDuration(file, dataUrl, 'video-info', 'video-cost', 'video-meta', null);
+  if (key === 'multi-target') {
+    if (mfIsVideo) {
+      loadVideoDuration(file, dataUrl, 'mf-video-info', 'mf-video-cost', 'mf-video-meta', dur => {
+        mfVideoDuration = dur;
+        extractVideoFrame(dataUrl, dur, detectFacesFromFrame);
+      });
+    } else {
+      detectFaces(dataUrl);
+    }
+  }
   checkBtns();
 }
 
 function showPreview(key, file, dataUrl) {
-  const uz = document.getElementById('uz-' + key);
   const empty = document.getElementById('ph-' + key + '-empty');
   const filled = document.getElementById('ph-' + key + '-filled');
+  const uz = document.getElementById('uz-' + key);
   if (!empty || !filled) return;
-
   const isVid = file.type.startsWith('video/');
   filled.innerHTML = `
     <div class="uz-preview">
-      ${isVid
-        ? `<video src="${dataUrl}" muted playsinline loop autoplay></video>`
-        : `<img src="${dataUrl}" alt="">`}
+      ${isVid ? `<video src="${dataUrl}" muted playsinline loop autoplay></video>` : `<img src="${dataUrl}" alt="">`}
       <button class="uz-rm" onclick="removeFile('${key}',event)">&times;</button>
     </div>
     <div class="uz-name">${file.name} &mdash; ${fmtBytes(file.size)}</div>
   `;
   empty.style.display = 'none';
   filled.style.display = 'block';
-  uz.classList.add('has-file');
+  if (uz) uz.classList.add('has-file');
 }
 
 function removeFile(key, e) {
@@ -400,17 +544,18 @@ function removeFile(key, e) {
   checkBtns();
 }
 
-function loadVideoDuration(file, dataUrl) {
+function loadVideoDuration(file, dataUrl, infoId, costId, metaId, cb) {
   const v = document.createElement('video');
   v.src = dataUrl;
   v.onloadedmetadata = () => {
     const s = Math.round(v.duration);
     const c = (s * 0.01).toFixed(2);
-    document.getElementById('video-info').textContent = `${s}s &mdash; ${fmtBytes(file.size)}`;
-    const ce = document.getElementById('video-cost');
+    document.getElementById(infoId).textContent = `${s}s \u2014 ${fmtBytes(file.size)}`;
+    const ce = document.getElementById(costId);
     ce.textContent = `~$${c} estimated`;
     ce.className = 'cost-note' + (parseFloat(c) > 2 ? ' warn' : '');
-    document.getElementById('video-meta').style.display = 'flex';
+    document.getElementById(metaId).style.display = 'flex';
+    if (cb) cb(v.duration);
   };
 }
 
@@ -436,19 +581,48 @@ function initDrop() {
   });
 }
 
-// ─── Multi-Face Detection ─────────────────────────────────────────────────────
+// ─── Video Frame Extraction ───────────────────────────────────────────────────
+function extractVideoFrame(dataUrl, duration, callback) {
+  resetMF();
+  const sec = document.getElementById('mf-detect-section');
+  sec.style.display = 'block';
+  document.getElementById('mf-detect-msg').textContent = 'Extracting frame for face detection\u2026';
+
+  const v = document.createElement('video');
+  v.src = dataUrl;
+  v.muted = true;
+  v.crossOrigin = 'anonymous';
+  v.onloadedmetadata = () => {
+    // Seek to 10% of the video (usually shows faces clearly)
+    const seekTo = Math.min(2, duration * 0.1);
+    v.currentTime = seekTo;
+  };
+  v.onseeked = () => {
+    const canvas = document.getElementById('mf-canvas');
+    canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(v, 0, 0);
+    // Convert frame to image element for FaceDetector
+    const frameUrl = canvas.toDataURL('image/jpeg', 0.9);
+    document.getElementById('mf-detect-msg').textContent = 'Frame extracted. Running face detection\u2026';
+    callback(frameUrl, ctx, canvas);
+  };
+  v.load();
+}
+
+// ─── Multi-Face Detection (image) ────────────────────────────────────────────
 function resetMF() {
   mfFaces = []; mfAssigned = {}; mfImg = null;
   document.getElementById('mf-detect-section').style.display = 'none';
   document.getElementById('mf-assign-section').style.display = 'none';
   document.getElementById('mf-ctrl').style.display = 'none';
+  document.getElementById('mf-video-meta').style.display = 'none';
 }
 
 async function detectFaces(dataUrl) {
   resetMF();
-  const sec = document.getElementById('mf-detect-section');
-  sec.style.display = 'block';
-  document.getElementById('mf-detect-msg').textContent = 'Loading image…';
+  document.getElementById('mf-detect-section').style.display = 'block';
+  document.getElementById('mf-detect-msg').textContent = 'Loading image\u2026';
 
   const img = new Image();
   img.onload = async () => {
@@ -457,45 +631,92 @@ async function detectFaces(dataUrl) {
     canvas.width = img.width; canvas.height = img.height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0);
-
-    document.getElementById('mf-detect-msg').textContent = 'Detecting faces…';
-
-    let detected = false;
-    if ('FaceDetector' in window) {
-      try {
-        const fd = new FaceDetector({ fastMode: false, maxDetectedFaces: 10 });
-        const results = await fd.detect(img);
-        if (results.length > 0) {
-          // Sort largest first
-          results.sort((a, b) =>
-            (b.boundingBox.width * b.boundingBox.height) - (a.boundingBox.width * a.boundingBox.height)
-          );
-          mfFaces = results.map((f, i) => ({
-            idx: i, x: f.boundingBox.x, y: f.boundingBox.y,
-            w: f.boundingBox.width, h: f.boundingBox.height
-          }));
-          drawBoxes(ctx);
-          document.getElementById('mf-detect-msg').textContent =
-            mfFaces.length + ' face' + (mfFaces.length !== 1 ? 's' : '') + ' detected';
-          detected = true;
-        }
-      } catch(e) { /* fallthrough */ }
-    }
-
-    if (!detected) {
-      // Fallback: no automatic detection, show manual slots
-      mfFaces = [];
-      document.getElementById('mf-detect-msg').textContent =
-        'Automatic detection unavailable in this browser. Use the numbered slots below (0 = largest face).';
-    }
-
-    buildFaceCards(detected ? mfFaces.length : 5);
+    document.getElementById('mf-detect-msg').textContent = 'Detecting faces\u2026';
+    await runDetection(img, ctx, canvas);
   };
   img.src = dataUrl;
 }
 
-function drawBoxes(ctx) {
-  const canvas = document.getElementById('mf-canvas');
+async function detectFacesFromFrame(frameUrl, ctx, canvas) {
+  const img = new Image();
+  img.onload = async () => {
+    mfImg = img;
+    await runDetection(img, ctx, canvas);
+  };
+  img.src = frameUrl;
+}
+
+// face-api.js model loading (lazy)
+let faceApiReady = false;
+const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+
+async function ensureFaceApi() {
+  if (faceApiReady) return true;
+  if (typeof faceapi === 'undefined') return false;
+  try {
+    document.getElementById('mf-detect-msg').textContent = 'Loading face detection model\u2026';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    faceApiReady = true;
+    return true;
+  } catch(e) { return false; }
+}
+
+async function runDetection(imgEl, ctx, canvas) {
+  let detected = false;
+
+  // Try face-api.js (tinyFaceDetector) — works in all modern browsers
+  const apiReady = await ensureFaceApi();
+  if (apiReady) {
+    try {
+      document.getElementById('mf-detect-msg').textContent = 'Detecting faces\u2026';
+      const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.35 });
+      const results = await faceapi.detectAllFaces(imgEl, opts);
+      if (results.length > 0) {
+        results.sort((a, b) =>
+          (b.box.width * b.box.height) - (a.box.width * a.box.height)
+        );
+        mfFaces = results.map((f, i) => ({
+          idx: i, x: f.box.x, y: f.box.y, w: f.box.width, h: f.box.height
+        }));
+        drawBoxes(ctx, canvas);
+        document.getElementById('mf-detect-msg').textContent =
+          mfFaces.length + ' face' + (mfFaces.length !== 1 ? 's' : '') + ' detected' +
+          (mfIsVideo ? ' \u2014 from extracted frame' : '');
+        detected = true;
+      }
+    } catch(e) { /* fallthrough to native */ }
+  }
+
+  // Fallback: native FaceDetector API (Chrome only)
+  if (!detected && 'FaceDetector' in window) {
+    try {
+      const fd = new FaceDetector({ fastMode: false, maxDetectedFaces: 10 });
+      const results = await fd.detect(imgEl);
+      if (results.length > 0) {
+        results.sort((a, b) =>
+          (b.boundingBox.width * b.boundingBox.height) - (a.boundingBox.width * a.boundingBox.height)
+        );
+        mfFaces = results.map((f, i) => ({
+          idx: i, x: f.boundingBox.x, y: f.boundingBox.y,
+          w: f.boundingBox.width, h: f.boundingBox.height
+        }));
+        drawBoxes(ctx, canvas);
+        document.getElementById('mf-detect-msg').textContent =
+          mfFaces.length + ' face' + (mfFaces.length !== 1 ? 's' : '') + ' detected';
+        detected = true;
+      }
+    } catch(e) { /* fallthrough */ }
+  }
+
+  if (!detected) {
+    mfFaces = [];
+    document.getElementById('mf-detect-msg').textContent =
+      'No faces detected automatically. Use the numbered slots below (0\u00a0=\u00a0largest face, assign photos manually).';
+  }
+  buildFaceCards(detected ? mfFaces.length : 5);
+}
+
+function drawBoxes(ctx, canvas) {
   ctx.drawImage(mfImg, 0, 0);
   const colors = ['#a855f7','#22c55e','#f59e0b','#3b82f6','#ef4444','#ec4899'];
   const lw = Math.max(2, Math.round(canvas.width / 180));
@@ -559,7 +780,9 @@ function onAssign(inp, i) {
     document.getElementById('faw-' + i).style.display = 'flex';
     document.getElementById('fcard-' + i).classList.add('assigned');
     const n = Object.keys(mfAssigned).length;
-    document.getElementById('mf-cost').textContent = `~$${(n * 0.012).toFixed(3)} (${n} pass${n>1?'es':''})`;
+    const baseCost = mfIsVideo ? (mfVideoDuration * 0.01) : 0.012;
+    document.getElementById('mf-cost').textContent =
+      `~$${(n * baseCost).toFixed(3)} (${n} pass${n>1?'es':''})`;
   };
   r.readAsDataURL(file);
 }
@@ -576,19 +799,37 @@ async function apiPost(path, body) {
   return d;
 }
 
-async function uploadVideo(file, onPct) {
+async function uploadFileXHR(file, onPct, progressBarId) {
+  if (progressBarId) {
+    const wrap = document.getElementById(progressBarId);
+    const bar = document.getElementById(progressBarId + '-bar');
+    if (wrap) { wrap.style.display = 'block'; bar.style.width = '0%'; }
+  }
   return new Promise((resolve, reject) => {
     const fd = new FormData(); fd.append('file', file);
     const xhr = new XMLHttpRequest();
     xhr.open('POST', PROXY + '/api/v3/files/upload');
     xhr.setRequestHeader('Authorization', `Bearer ${apiKey}`);
-    xhr.upload.onprogress = e => { if (e.lengthComputable && onPct) onPct(e.loaded / e.total); };
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) {
+        const pct = e.loaded / e.total;
+        if (onPct) onPct(pct);
+        if (progressBarId) {
+          const bar = document.getElementById(progressBarId + '-bar');
+          if (bar) bar.style.width = (pct * 100) + '%';
+        }
+      }
+    };
     xhr.onload = () => {
+      if (progressBarId) {
+        const wrap = document.getElementById(progressBarId);
+        if (wrap) wrap.style.display = 'none';
+      }
       try {
         const d = JSON.parse(xhr.responseText);
         if (xhr.status >= 400 || (d.code && d.code >= 400)) return reject(new Error(d.message || 'Upload failed'));
         const url = d?.data?.url || d?.url || d?.data?.file_url || d?.data?.download_url;
-        url ? resolve(url) : reject(new Error('Upload OK but no URL in response: ' + xhr.responseText.slice(0,200)));
+        url ? resolve(url) : reject(new Error('Upload OK but no URL: ' + xhr.responseText.slice(0,200)));
       } catch(e) { reject(e); }
     };
     xhr.onerror = () => reject(new Error('Upload network error'));
@@ -597,7 +838,7 @@ async function uploadVideo(file, onPct) {
 }
 
 async function poll(id, steps, stepId) {
-  for (let i = 0; i < 360; i++) {
+  for (let i = 0; i < 400; i++) {
     await sleep(3000);
     const r = await fetch(`${PROXY}/api/v3/predictions/${id}/result`, {
       headers: {'Authorization': `Bearer ${apiKey}`}
@@ -615,7 +856,7 @@ async function poll(id, steps, stepId) {
     }
     if (st === 'failed' || st === 'error') throw new Error(p.error || p.message || 'Prediction failed');
   }
-  throw new Error('Timeout after 18 minutes');
+  throw new Error('Timeout after 20 minutes');
 }
 
 // ─── Photo Swap ───────────────────────────────────────────────────────────────
@@ -625,8 +866,9 @@ async function doPhotoSwap() {
   if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
   busy = true;
   const t0 = Date.now();
-  setBtn('photo', true, 'Swapping…');
+  setBtn('photo', true, 'Swapping\u2026');
   const steps = initResult([{id:'swap', label:'Running face swap'}]);
+  startGhost(20000); // ~20s for an image swap
   markStep(steps, 'swap', 'active');
   try {
     const d = await apiPost('/api/v3/wavespeed-ai/image-face-swap', {
@@ -638,8 +880,9 @@ async function doPhotoSwap() {
     });
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
     const url = await poll(id, steps, 'swap');
+    stopGhost(true);
     showResult(url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.012');
-  } catch(e) { resultError(e.message); }
+  } catch(e) { stopGhost(false); resultError(e.message); }
   finally { busy = false; setBtn('photo', false, 'Swap Face'); }
 }
 
@@ -650,18 +893,18 @@ async function doVideoSwap() {
   if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
   busy = true;
   const t0 = Date.now();
-  setBtn('video', true, 'Uploading…');
+  setBtn('video', true, 'Uploading\u2026');
   const steps = initResult([{id:'upload',label:'Uploading video'},{id:'swap',label:'Processing face swap'}]);
   markStep(steps, 'upload', 'active');
-  const prog = document.getElementById('uprog');
-  const bar = document.getElementById('uprog-bar');
-  prog.style.display = 'block'; bar.style.width = '0%';
   try {
-    const videoUrl = await uploadVideo(F['video-target'].file, pct => { bar.style.width = (pct*100)+'%'; });
-    prog.style.display = 'none';
+    const videoUrl = await uploadFileXHR(F['video-target'].file, null, 'uprog');
     markStep(steps, 'upload', 'done');
     markStep(steps, 'swap', 'active');
-    setBtn('video', true, 'Processing…');
+    setBtn('video', true, 'Processing\u2026');
+    // Estimate processing time: ~3x video duration + buffer
+    let estSecs = 60;
+    try { const v = document.createElement('video'); v.src = F['video-target'].dataUrl; await new Promise(r=>{v.onloadedmetadata=r;}); estSecs = v.duration * 3 + 15; } catch(e){}
+    startGhost(estSecs * 1000);
     const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
       video: videoUrl,
       face_image: F['video-face'].dataUrl,
@@ -669,15 +912,11 @@ async function doVideoSwap() {
     });
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
     const url = await poll(id, steps, 'swap');
-    // Get video duration for cost calc
+    stopGhost(true);
     let cost = '?';
-    try {
-      const v = document.createElement('video'); v.src = F['video-target'].dataUrl;
-      await new Promise(r => { v.onloadedmetadata = r; });
-      cost = '$' + (v.duration * 0.01).toFixed(2);
-    } catch(e) {}
+    try { const v2 = document.createElement('video'); v2.src = F['video-target'].dataUrl; await new Promise(r=>{v2.onloadedmetadata=r;}); cost = '$'+(v2.duration*0.01).toFixed(2); } catch(e){}
     showResult(url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
-  } catch(e) { prog.style.display='none'; resultError(e.message); }
+  } catch(e) { stopGhost(false); resultError(e.message); }
   finally { busy = false; setBtn('video', false, 'Swap Face'); }
 }
 
@@ -685,13 +924,24 @@ async function doVideoSwap() {
 async function doMultiSwap() {
   if (busy) return;
   if (!apiKey) { toast('Enter WaveSpeed API key first'); return; }
-  if (!F['multi-target']) { toast('Upload target image first'); return; }
+  if (!F['multi-target']) { toast('Upload target first'); return; }
   const idxs = Object.keys(mfAssigned).map(Number).sort((a,b) => a-b);
   if (!idxs.length) { toast('Assign at least one source face photo first'); return; }
   busy = true;
   const t0 = Date.now();
-  setBtn('multi', true, 'Swapping…');
-  const steps = initResult(idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`})));
+  setBtn('multi', true, 'Swapping\u2026');
+
+  if (mfIsVideo) {
+    await doMultiSwapVideo(idxs, t0);
+  } else {
+    await doMultiSwapImage(idxs, t0);
+  }
+}
+
+async function doMultiSwapImage(idxs, t0) {
+  const stepDefs = idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`}));
+  const steps = initResult(stepDefs);
+  startGhost(idxs.length * 20000);
   let current = F['multi-target'].dataUrl;
   try {
     for (let k = 0; k < idxs.length; k++) {
@@ -706,15 +956,47 @@ async function doMultiSwap() {
       });
       const id = d?.data?.id; if (!id) throw new Error('No prediction ID for face ' + i);
       const url = await poll(id, steps, 'f'+i);
-      if (k < idxs.length - 1) {
-        current = await toBase64(url);  // chain: result becomes next target
-      } else {
-        current = url;
-      }
+      current = (k < idxs.length - 1) ? await toBase64(url) : url;
     }
-    const cost = '$' + (idxs.length * 0.012).toFixed(3);
-    showResult(current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', cost);
-  } catch(e) { resultError(e.message); }
+    stopGhost(true);
+    showResult(current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$'+(idxs.length*0.012).toFixed(3));
+  } catch(e) { stopGhost(false); resultError(e.message); }
+  finally { busy = false; setBtn('multi', false, 'Swap All Faces'); }
+}
+
+async function doMultiSwapVideo(idxs, t0) {
+  const stepDefs = [
+    {id:'upload', label:'Uploading video'},
+    ...idxs.map(i => ({id:'f'+i, label:`Swapping face ${i} in video`}))
+  ];
+  const steps = initResult(stepDefs);
+  markStep(steps, 'upload', 'active');
+
+  try {
+    // Upload original video
+    const origUrl = await uploadFileXHR(F['multi-target'].file, null, 'mf-uprog');
+    markStep(steps, 'upload', 'done');
+
+    const estSecs = mfVideoDuration * 3 * idxs.length + 20;
+    startGhost(estSecs * 1000);
+
+    let currentUrl = origUrl;
+    for (let k = 0; k < idxs.length; k++) {
+      const i = idxs[k];
+      markStep(steps, 'f'+i, 'active');
+      setBtn('multi', true, `Processing face ${i}\u2026`);
+      const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
+        video: currentUrl,
+        face_image: mfAssigned[i].dataUrl,
+        target_index: i
+      });
+      const id = d?.data?.id; if (!id) throw new Error('No prediction ID for face ' + i);
+      currentUrl = await poll(id, steps, 'f'+i);
+    }
+    stopGhost(true);
+    const cost = '$' + (idxs.length * mfVideoDuration * 0.01).toFixed(2);
+    showResult(currentUrl, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
+  } catch(e) { stopGhost(false); resultError(e.message); }
   finally { busy = false; setBtn('multi', false, 'Swap All Faces'); }
 }
 
@@ -733,6 +1015,8 @@ function initResult(defs) {
   document.getElementById('res-meta').textContent = '';
   document.getElementById('res-chip').textContent = 'Processing';
   document.getElementById('res-chip').className = 'chip processing';
+  document.getElementById('ghost-fill').style.opacity = '1';
+  document.getElementById('ghost-fill').style.width = '0%';
   const stepsEl = document.getElementById('res-steps'); stepsEl.innerHTML = '';
   const map = {};
   defs.forEach(d => {
@@ -781,12 +1065,8 @@ function setBtn(which, loading, label) {
   const lbl = document.getElementById('btn-' + which + '-lbl');
   btn.disabled = loading;
   if (ico) {
-    if (loading) {
-      ico.setAttribute('class', 'spin-ico');
-      ico.innerHTML = '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>';
-    } else {
-      ico.setAttribute('class', '');
-    }
+    if (loading) { ico.setAttribute('class','spin-ico'); ico.innerHTML='<path d="M21 12a9 9 0 1 1-6.219-8.56"/>'; }
+    else { ico.setAttribute('class',''); }
   }
   if (lbl) lbl.textContent = label;
 }
