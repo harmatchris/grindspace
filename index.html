@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ grindspace — AI Face Swap</title>
+<title>â¡ grindspace â AI Face Swap</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -34,7 +34,7 @@
   ::-webkit-scrollbar-track { background: var(--surface); }
   ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 3px; }
 
-  /* ── Layout */
+  /* ââ Layout */
   .app { display: flex; flex-direction: column; min-height: 100vh; }
 
   header {
@@ -92,7 +92,7 @@
     gap: 18px;
   }
 
-  /* ── Token panel */
+  /* ââ Token panel */
   .token-panel {
     background: #111;
     border: 1px solid var(--border);
@@ -150,7 +150,7 @@
   .btn-save.saved { background: rgba(34,197,94,0.2); color: #86efac; }
   .token-ok { font-size: 11px; color: rgba(34,197,94,0.7); display: flex; align-items: center; gap: 5px; }
 
-  /* ── Warning */
+  /* ââ Warning */
   .warn-bar {
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: 12px;
@@ -161,7 +161,7 @@
   }
   .warn-bar a { color: #fbbf24; }
 
-  /* ── Mode + Quality row */
+  /* ââ Mode + Quality row */
   .controls-row {
     display: flex;
     align-items: center;
@@ -202,7 +202,7 @@
   .qtab:hover { color: #bbb; }
   .qtab.active { background: rgba(124,58,237,0.5); color: #e0d2ff; }
 
-  /* ── Upload panels */
+  /* ââ Upload panels */
   .upload-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -266,7 +266,7 @@
   }
   .clear-btn:hover { background: rgba(0,0,0,0.95); }
 
-  /* ── Options row */
+  /* ââ Options row */
   .options-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .toggle-btn {
     display: flex; align-items: center; gap: 7px;
@@ -279,7 +279,7 @@
   .toggle-btn.on { border-color: var(--accent); background: rgba(124,58,237,0.15); color: #c4b5fd; }
   .options-note { font-size: 11px; color: #444; }
 
-  /* ── Swap button */
+  /* ââ Swap button */
   .swap-btn {
     width: 100%; padding: 15px;
     border-radius: 14px; border: none;
@@ -297,7 +297,7 @@
   .swap-btn.ready:hover { background: linear-gradient(135deg, #6d28d9, #9333ea); transform: translateY(-1px); box-shadow: 0 12px 35px rgba(124,58,237,0.45); }
   .swap-btn.ready:active { transform: translateY(0); }
 
-  /* ── Progress */
+  /* ââ Progress */
   .progress-box {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -321,7 +321,7 @@
   .progress-fill.error { background: var(--danger); }
   .progress-hint { font-size: 11px; color: #444; }
 
-  /* ── Result */
+  /* ââ Result */
   .result-box {
     display: flex; flex-direction: column; gap: 14px;
     animation: fadeIn 0.3s ease-out;
@@ -352,7 +352,7 @@
   }
   .btn-new:hover { color: var(--text); background: var(--surface2); }
 
-  /* ── Error */
+  /* ââ Error */
   .error-box {
     display: flex; align-items: flex-start; gap: 10px;
     padding: 14px; border-radius: 12px;
@@ -364,7 +364,7 @@
   .error-title { font-size: 13px; font-weight: 600; color: #fca5a5; }
   .error-msg { font-size: 12px; color: rgba(252,165,165,0.7); margin-top: 3px; line-height: 1.4; }
 
-  /* ── Info cards */
+  /* ââ Info cards */
   .info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -381,7 +381,7 @@
   .info-card h3 { font-size: 13px; font-weight: 600; color: #d1d5db; margin-bottom: 4px; }
   .info-card p { font-size: 11px; color: #4b5563; line-height: 1.5; }
 
-  /* ── Footer */
+  /* ââ Footer */
   footer {
     border-top: 1px solid #1e1e1e;
     padding: 12px 24px;
@@ -390,7 +390,7 @@
     color: #333;
   }
 
-  /* ── Spinner */
+  /* ââ Spinner */
   .spinner {
     width: 16px; height: 16px;
     border: 2px solid rgba(167,139,250,0.3);
@@ -415,16 +415,16 @@
   <!-- Header -->
   <header>
     <div class="logo">
-      <div class="logo-icon">⚡</div>
+      <div class="logo-icon">â¡</div>
       <div class="logo-text">
         <h1>grindspace</h1>
-        <p>AI Face Swap · No limits · No watermarks</p>
+        <p>AI Face Swap Â· No limits Â· No watermarks</p>
       </div>
     </div>
     <div class="header-right">
       <div id="statusDot" class="status-dot"></div>
       <span id="statusLabel" class="status-label">No token</span>
-      <button id="btnToken" class="btn-token" onclick="toggleSettings()">🔑 API Token</button>
+      <button id="btnToken" class="btn-token" onclick="toggleSettings()">ð API Token</button>
     </div>
   </header>
 
@@ -433,37 +433,37 @@
     <!-- Token panel -->
     <div id="tokenPanel" class="token-panel hidden">
       <div class="token-header">
-        🔑 Replicate API Token
-        <a href="https://replicate.com/account/api-tokens" target="_blank">Get free token ↗</a>
+        ð Replicate API Token
+        <a href="https://replicate.com/account/api-tokens" target="_blank">Get free token â</a>
       </div>
       <div class="token-row">
         <div class="token-input-wrap">
           <input id="tokenInput" class="token-input" type="password"
             placeholder="r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             onkeydown="if(event.key==='Enter') saveToken()">
-          <button class="toggle-vis" onclick="toggleVis()">👁</button>
+          <button class="toggle-vis" onclick="toggleVis()">ð</button>
         </div>
         <button id="btnSave" class="btn-save" onclick="saveToken()">Save</button>
       </div>
-      <div id="tokenOk" class="token-ok hidden">✅ Token active for this session</div>
+      <div id="tokenOk" class="token-ok hidden">â Token active for this session</div>
     </div>
 
     <!-- No token warning -->
     <div id="warnBar" class="warn-bar">
-      ⚠️ Add your <a href="https://replicate.com/account/api-tokens" target="_blank">Replicate API token</a> above to start swapping. It's free to get.
+      â ï¸ Add your <a href="https://replicate.com/account/api-tokens" target="_blank">Replicate API token</a> above to start swapping. It's free to get.
     </div>
 
     <!-- Mode + Quality -->
     <div class="controls-row">
       <div class="tab-group">
-        <button class="tab active" id="tabPhoto" onclick="setMode('photo')">🖼 Photo</button>
-        <button class="tab" id="tabVideo" onclick="setMode('video')">🎬 Video</button>
+        <button class="tab active" id="tabPhoto" onclick="setMode('photo')">ð¼ Photo</button>
+        <button class="tab" id="tabVideo" onclick="setMode('video')">ð¬ Video</button>
       </div>
       <div class="quality-group">
         Quality:
         <div class="quality-tabs">
           <button class="qtab active" id="qStandard" onclick="setQuality('standard')">Standard</button>
-          <button class="qtab" id="qAdvanced" onclick="setQuality('advanced')">✨ Advanced</button>
+          <button class="qtab" id="qAdvanced" onclick="setQuality('advanced')">â¨ Advanced</button>
         </div>
       </div>
     </div>
@@ -479,7 +479,7 @@
           ondrop="handleDrop(event,'face')"
           onclick="document.getElementById('faceInput').click()">
           <input type="file" id="faceInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'face')">
-          <div class="zone-icon" id="faceIcon">👤</div>
+          <div class="zone-icon" id="faceIcon">ð¤</div>
           <div class="zone-text">
             <p>Upload your face photo</p>
             <small>Drag & drop or click to browse</small>
@@ -496,7 +496,7 @@
           ondrop="handleDrop(event,'target')"
           onclick="document.getElementById('targetInput').click()">
           <input type="file" id="targetInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'target')">
-          <div class="zone-icon" id="targetIcon">🎯</div>
+          <div class="zone-icon" id="targetIcon">ð¯</div>
           <div class="zone-text" id="targetText">
             <p>Upload target photo</p>
             <small>Drag & drop or click to browse</small>
@@ -507,13 +507,13 @@
 
     <!-- Options -->
     <div class="options-row">
-      <button class="toggle-btn" id="btnMultiface" onclick="toggleMultiface()">👥 Multiple Faces</button>
-      <span class="options-note" id="videoNote" style="display:none">Video: 1–5 min processing · No size or time limits</span>
+      <button class="toggle-btn" id="btnMultiface" onclick="toggleMultiface()">ð¥ Multiple Faces</button>
+      <span class="options-note" id="videoNote" style="display:none">Video: 1â5 min processing Â· No size or time limits</span>
     </div>
 
     <!-- Swap button -->
     <button class="swap-btn" id="swapBtn" onclick="doSwap()">
-      <span id="swapBtnIcon">⚡</span>
+      <span id="swapBtnIcon">â¡</span>
       <span id="swapBtnText">Swap Now</span>
     </button>
 
@@ -534,7 +534,7 @@
 
     <!-- Error -->
     <div class="error-box hidden" id="errorBox">
-      <div class="error-icon">⚠️</div>
+      <div class="error-icon">â ï¸</div>
       <div>
         <div class="error-title">Error</div>
         <div class="error-msg" id="errorMsg"></div>
@@ -543,41 +543,41 @@
 
     <!-- Result -->
     <div class="result-box hidden" id="resultBox">
-      <div class="result-header">✅ Swap complete!</div>
+      <div class="result-header">â Swap complete!</div>
       <div class="result-media" id="resultMedia"></div>
       <div class="result-actions">
-        <button class="btn-download" onclick="downloadResult()">⬇️ Download Result</button>
-        <button class="btn-new" onclick="resetAll()">🔄 New Swap</button>
+        <button class="btn-download" onclick="downloadResult()">â¬ï¸ Download Result</button>
+        <button class="btn-new" onclick="resetAll()">ð New Swap</button>
       </div>
     </div>
 
     <!-- Info cards (shown when idle) -->
     <div class="info-grid" id="infoCards">
       <div class="info-card">
-        <div class="icon">🎯</div>
+        <div class="icon">ð¯</div>
         <h3>Best Quality</h3>
-        <p>Top-ranked Replicate models — same tech as DeepSwap and commercial tools</p>
+        <p>Top-ranked Replicate models â same tech as DeepSwap and commercial tools</p>
       </div>
       <div class="info-card">
-        <div class="icon">📁</div>
+        <div class="icon">ð</div>
         <h3>No Limits</h3>
         <p>No file size cap, no time limit on videos, no watermarks ever</p>
       </div>
       <div class="info-card">
-        <div class="icon">🔒</div>
+        <div class="icon">ð</div>
         <h3>100% Private</h3>
-        <p>Runs on your own API key. Files go directly to Replicate — nothing stored here.</p>
+        <p>Runs on your own API key. Files go directly to Replicate â nothing stored here.</p>
       </div>
     </div>
 
   </main>
 
-  <footer>grindspace · personal use only · powered by Replicate API</footer>
+  <footer>grindspace Â· personal use only Â· powered by Replicate API</footer>
 </div>
 
 <script>
-// ── State ────────────────────────────────────────────────────────────────────
-const REPLICATE_API = 'https://api.replicate.com/v1';
+// ââ State ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+const REPLICATE_API = 'https://far-robin-63.harmatchris.deno.net/v1';
 const MODELS = {
   photoStandard: 'codeplugtech/face-swap',
   photoAdvanced: 'yan-ops/face-swap',
@@ -597,7 +597,7 @@ let state = {
   pollTimer: null,
 };
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ââ Init âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 window.addEventListener('DOMContentLoaded', () => {
   if (state.token) {
     document.getElementById('tokenInput').value = state.token;
@@ -608,7 +608,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ── Token ─────────────────────────────────────────────────────────────────────
+// ââ Token âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function toggleSettings() {
   const panel = document.getElementById('tokenPanel');
   const btn = document.getElementById('btnToken');
@@ -626,7 +626,7 @@ function saveToken() {
   state.token = val;
   sessionStorage.setItem('gs_token', val);
   const btn = document.getElementById('btnSave');
-  btn.textContent = 'Saved ✓';
+  btn.textContent = 'Saved â';
   btn.classList.add('saved');
   setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); }, 2000);
   if (val) {
@@ -655,7 +655,7 @@ function updateTokenUI() {
   updateSwapButton();
 }
 
-// ── Mode / Quality ────────────────────────────────────────────────────────────
+// ââ Mode / Quality ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function setMode(m) {
   state.mode = m;
   document.getElementById('tabPhoto').classList.toggle('active', m === 'photo');
@@ -691,10 +691,10 @@ function setQuality(q) {
 function toggleMultiface() {
   state.multiface = !state.multiface;
   document.getElementById('btnMultiface').classList.toggle('on', state.multiface);
-  document.getElementById('btnMultiface').textContent = state.multiface ? '👥 Multiple Faces ✓' : '👥 Multiple Faces';
+  document.getElementById('btnMultiface').textContent = state.multiface ? 'ð¥ Multiple Faces â' : 'ð¥ Multiple Faces';
 }
 
-// ── File Handling ─────────────────────────────────────────────────────────────
+// ââ File Handling âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function handleDragOver(e, zone) {
   e.preventDefault();
   document.getElementById(zone + 'Zone').classList.add('drag-over');
@@ -787,19 +787,19 @@ function showPreview(zone, file) {
 
   const clearBtn = document.createElement('button');
   clearBtn.className = 'clear-btn';
-  clearBtn.innerHTML = '✕';
+  clearBtn.innerHTML = 'â';
   clearBtn.onclick = (e) => { e.stopPropagation(); clearFile(zone); };
   zoneEl.appendChild(clearBtn);
 }
 
-// ── Swap Button State ─────────────────────────────────────────────────────────
+// ââ Swap Button State âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function updateSwapButton() {
   const btn = document.getElementById('swapBtn');
   const canSwap = state.faceFile && state.targetFile && state.status === 'idle';
   btn.classList.toggle('ready', !!canSwap);
 }
 
-// ── Progress helpers ──────────────────────────────────────────────────────────
+// ââ Progress helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function setProgress(pct, msg, hint = '') {
   document.getElementById('progressBox').classList.remove('hidden');
   document.getElementById('progressMsg').textContent = msg;
@@ -824,7 +824,7 @@ function resetStatus() {
 
   const btn = document.getElementById('swapBtn');
   btn.classList.remove('ready');
-  document.getElementById('swapBtnIcon').textContent = '⚡';
+  document.getElementById('swapBtnIcon').textContent = 'â¡';
   document.getElementById('swapBtnText').textContent = 'Swap Now';
   updateSwapButton();
 }
@@ -845,11 +845,11 @@ function showError(msg) {
 
   const btn = document.getElementById('swapBtn');
   btn.classList.add('ready');
-  document.getElementById('swapBtnIcon').textContent = '⚡';
+  document.getElementById('swapBtnIcon').textContent = 'â¡';
   document.getElementById('swapBtnText').textContent = 'Try Again';
 }
 
-// ── File to base64 ────────────────────────────────────────────────────────────
+// ââ File to base64 ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -859,7 +859,7 @@ function fileToBase64(file) {
   });
 }
 
-// ── Upload to Replicate Files API ─────────────────────────────────────────────
+// ââ Upload to Replicate Files API âââââââââââââââââââââââââââââââââââââââââââââ
 async function uploadToReplicate(file) {
   const res = await fetch(`${REPLICATE_API}/files`, {
     method: 'POST',
@@ -878,7 +878,7 @@ async function uploadToReplicate(file) {
   return data.urls.get;
 }
 
-// ── Create prediction ─────────────────────────────────────────────────────────
+// ââ Create prediction âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function createPrediction(model, input) {
   const res = await fetch(`${REPLICATE_API}/models/${model}/predictions`, {
     method: 'POST',
@@ -898,7 +898,7 @@ async function createPrediction(model, input) {
   return res.json();
 }
 
-// ── Poll until done ───────────────────────────────────────────────────────────
+// ââ Poll until done âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function startPolling(predictionId) {
   let pct = 45;
   state.pollTimer = setInterval(async () => {
@@ -910,7 +910,7 @@ function startPolling(predictionId) {
       const data = await res.json();
 
       pct = Math.min(pct + 7, 90);
-      setProgress(pct, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1–5 minutes. Page updates automatically.' : '');
+      setProgress(pct, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1â5 minutes. Page updates automatically.' : '');
 
       if (data.status === 'succeeded') {
         clearInterval(state.pollTimer);
@@ -931,7 +931,7 @@ function startPolling(predictionId) {
   }, 3000);
 }
 
-// ── Show result ───────────────────────────────────────────────────────────────
+// ââ Show result âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function showResult(url) {
   state.resultUrl = url;
   state.resultType = (state.mode === 'video' || url.endsWith('.mp4')) ? 'video' : 'image';
@@ -952,11 +952,11 @@ function showResult(url) {
 
   const btn = document.getElementById('swapBtn');
   btn.classList.add('ready');
-  document.getElementById('swapBtnIcon').textContent = '⚡';
+  document.getElementById('swapBtnIcon').textContent = 'â¡';
   document.getElementById('swapBtnText').textContent = 'Swap Now';
 }
 
-// ── Download ──────────────────────────────────────────────────────────────────
+// ââ Download ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function downloadResult() {
   if (!state.resultUrl) return;
   try {
@@ -972,7 +972,7 @@ async function downloadResult() {
   }
 }
 
-// ── Main Swap ─────────────────────────────────────────────────────────────────
+// ââ Main Swap âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function doSwap() {
   if (state.status === 'uploading' || state.status === 'processing') return;
   if (!state.token) { document.getElementById('tokenPanel').classList.remove('hidden'); document.getElementById('btnToken').classList.add('active'); return; }
@@ -1004,7 +1004,7 @@ async function doSwap() {
       setProgress(10, 'Uploading face image...');
       faceInput = await uploadToReplicate(state.faceFile);
     }
-    setProgress(25, 'Face image ready ✓');
+    setProgress(25, 'Face image ready â');
 
     // Upload target
     let targetInput;
@@ -1039,7 +1039,7 @@ async function doSwap() {
       showResult(url);
     } else {
       // Poll for result
-      setProgress(45, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1–5 min. Auto-updates.' : '');
+      setProgress(45, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1â5 min. Auto-updates.' : '');
       startPolling(prediction.id);
     }
 
