@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ grindspace — AI Face Swap</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --surface2: #222;
+    --border: #2a2a2a;
+    --border-hover: #3a3a3a;
+    --accent: #7c3aed;
+    --accent-light: #a855f7;
+    --text: #f0f0f0;
+    --subtext: #9ca3af;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warn: #f59e0b;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 3px; }
+
+  /* ── Layout */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header {
+    border-bottom: 1px solid #1e1e1e;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+    flex-shrink: 0;
+  }
+  .logo-text h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-text p { font-size: 10px; color: #555; margin-top: -1px; }
+
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--danger);
+    transition: background 0.3s;
+  }
+  .status-dot.connected { background: var(--success); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .status-label { font-size: 11px; color: #555; }
+
+  .btn-token {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: #888; font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-token:hover { color: var(--text); border-color: var(--border-hover); }
+  .btn-token.active { border-color: var(--accent); background: rgba(124,58,237,0.15); color: #c4b5fd; }
+
+  main {
+    flex: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 28px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* ── Token panel */
+  .token-panel {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: fadeIn 0.25s ease-out;
+  }
+  .token-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #9ca3af;
+  }
+  .token-header a {
+    margin-left: auto;
+    color: #a78bfa;
+    font-size: 11px;
+    text-decoration: none;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .token-header a:hover { color: #c4b5fd; }
+  .token-row { display: flex; gap: 8px; }
+  .token-input-wrap { position: relative; flex: 1; }
+  .token-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 34px 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .token-input:focus { border-color: var(--accent); }
+  .token-input::placeholder { color: #444; }
+  .toggle-vis {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: #555; font-size: 14px; padding: 2px;
+    transition: color 0.2s;
+  }
+  .toggle-vis:hover { color: #9ca3af; }
+  .btn-save {
+    padding: 9px 14px; border-radius: 9px; border: none;
+    background: rgba(124,58,237,0.3); color: #c4b5fd;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-save:hover { background: rgba(124,58,237,0.5); }
+  .btn-save.saved { background: rgba(34,197,94,0.2); color: #86efac; }
+  .token-ok { font-size: 11px; color: rgba(34,197,94,0.7); display: flex; align-items: center; gap: 5px; }
+
+  /* ── Warning */
+  .warn-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 12px;
+    border: 1px solid rgba(245,158,11,0.25);
+    background: rgba(245,158,11,0.06);
+    font-size: 12px; color: rgba(245,158,11,0.8);
+    animation: fadeIn 0.25s ease-out;
+  }
+  .warn-bar a { color: #fbbf24; }
+
+  /* ── Mode + Quality row */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .tab-group {
+    display: flex; gap: 4px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 4px;
+  }
+  .tab {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 20px; border-radius: 9px;
+    border: none; background: none;
+    color: #666; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .tab:hover { color: #bbb; }
+  .tab.active { background: rgba(124,58,237,0.5); color: #e0d2ff; }
+
+  .quality-group {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #666; font-weight: 500;
+  }
+  .quality-tabs {
+    display: flex; gap: 3px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 9px; padding: 3px;
+  }
+  .qtab {
+    padding: 5px 12px; border-radius: 7px; border: none;
+    background: none; color: #666; font-size: 11px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; text-transform: capitalize;
+  }
+  .qtab:hover { color: #bbb; }
+  .qtab.active { background: rgba(124,58,237,0.5); color: #e0d2ff; }
+
+  /* ── Upload panels */
+  .upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media(max-width: 600px) { .upload-grid { grid-template-columns: 1fr; } }
+
+  .upload-zone-wrap { display: flex; flex-direction: column; gap: 7px; }
+  .zone-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #555; }
+
+  .drop-zone {
+    aspect-ratio: 16/9;
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .drop-zone:hover { border-color: var(--accent); background: #1f1a2e; }
+  .drop-zone.drag-over { border-color: var(--accent-light); background: rgba(124,58,237,0.1); box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(124,58,237,0.25); }
+  .drop-zone.has-file { border-style: solid; border-color: var(--border); cursor: default; }
+
+  .zone-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #2a2a2a;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    transition: background 0.2s;
+  }
+  .drop-zone:hover .zone-icon, .drop-zone.drag-over .zone-icon { background: rgba(124,58,237,0.2); }
+  .zone-text { text-align: center; padding: 0 16px; }
+  .zone-text p { font-size: 13px; color: #888; font-weight: 500; }
+  .zone-text small { font-size: 11px; color: #444; display: block; margin-top: 3px; }
+
+  .preview-img, .preview-vid {
+    width: 100%; height: 100%; object-fit: contain;
+    position: absolute; top: 0; left: 0;
+  }
+  .preview-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+    padding: 10px 12px;
+    transform: translateY(100%);
+    transition: transform 0.2s;
+  }
+  .drop-zone:hover .preview-overlay { transform: translateY(0); }
+  .preview-name { font-size: 11px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preview-size { font-size: 10px; color: #777; }
+  .clear-btn {
+    position: absolute; top: 8px; right: 8px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(0,0,0,0.7); border: none;
+    color: #ccc; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s; line-height: 1;
+  }
+  .clear-btn:hover { background: rgba(0,0,0,0.95); }
+
+  /* ── Options row */
+  .options-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .toggle-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 14px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: #666; font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .toggle-btn:hover { color: #aaa; border-color: var(--border-hover); }
+  .toggle-btn.on { border-color: var(--accent); background: rgba(124,58,237,0.15); color: #c4b5fd; }
+  .options-note { font-size: 11px; color: #444; }
+
+  /* ── Swap button */
+  .swap-btn {
+    width: 100%; padding: 15px;
+    border-radius: 14px; border: none;
+    background: var(--surface); border: 1px solid var(--border);
+    color: #555; font-size: 16px; font-weight: 700;
+    cursor: not-allowed; transition: all 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .swap-btn.ready {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border-color: transparent; color: white;
+    cursor: pointer;
+    box-shadow: 0 8px 30px rgba(124,58,237,0.35);
+  }
+  .swap-btn.ready:hover { background: linear-gradient(135deg, #6d28d9, #9333ea); transform: translateY(-1px); box-shadow: 0 12px 35px rgba(124,58,237,0.45); }
+  .swap-btn.ready:active { transform: translateY(0); }
+
+  /* ── Progress */
+  .progress-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    animation: fadeIn 0.25s ease-out;
+  }
+  .progress-top { display: flex; align-items: center; justify-content: space-between; }
+  .progress-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #ccc; }
+  .progress-pct { font-size: 11px; color: #555; }
+  .progress-track {
+    height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    transition: width 0.5s ease-out;
+  }
+  .progress-fill.done { background: var(--success); }
+  .progress-fill.error { background: var(--danger); }
+  .progress-hint { font-size: 11px; color: #444; }
+
+  /* ── Result */
+  .result-box {
+    display: flex; flex-direction: column; gap: 14px;
+    animation: fadeIn 0.3s ease-out;
+  }
+  .result-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--success); }
+  .result-media {
+    border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .result-media img, .result-media video { width: 100%; display: block; object-fit: contain; }
+  .result-actions { display: flex; gap: 10px; }
+  .btn-download {
+    flex: 1; padding: 13px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border: none; border-radius: 12px;
+    color: white; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+  }
+  .btn-download:hover { background: linear-gradient(135deg, #6d28d9, #9333ea); }
+  .btn-new {
+    padding: 13px 16px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: #888; font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    transition: all 0.2s;
+  }
+  .btn-new:hover { color: var(--text); background: var(--surface2); }
+
+  /* ── Error */
+  .error-box {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 14px; border-radius: 12px;
+    border: 1px solid rgba(239,68,68,0.25);
+    background: rgba(239,68,68,0.06);
+    animation: fadeIn 0.25s ease-out;
+  }
+  .error-icon { color: var(--danger); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .error-title { font-size: 13px; font-weight: 600; color: #fca5a5; }
+  .error-msg { font-size: 12px; color: rgba(252,165,165,0.7); margin-top: 3px; line-height: 1.4; }
+
+  /* ── Info cards */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid #1e1e1e;
+  }
+  @media(max-width: 600px) { .info-grid { grid-template-columns: 1fr; } }
+  .info-card {
+    padding: 14px; border-radius: 12px;
+    border: 1px solid #1e1e1e; background: #111;
+  }
+  .info-card .icon { font-size: 20px; margin-bottom: 6px; }
+  .info-card h3 { font-size: 13px; font-weight: 600; color: #d1d5db; margin-bottom: 4px; }
+  .info-card p { font-size: 11px; color: #4b5563; line-height: 1.5; }
+
+  /* ── Footer */
+  footer {
+    border-top: 1px solid #1e1e1e;
+    padding: 12px 24px;
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+  }
+
+  /* ── Spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(167,139,250,0.3);
+    border-top-color: #a78bfa;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">
+        <h1>grindspace</h1>
+        <p>AI Face Swap · No limits · No watermarks</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="statusDot" class="status-dot"></div>
+      <span id="statusLabel" class="status-label">No token</span>
+      <button id="btnToken" class="btn-token" onclick="toggleSettings()">🔑 API Token</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Token panel -->
+    <div id="tokenPanel" class="token-panel hidden">
+      <div class="token-header">
+        🔑 Replicate API Token
+        <a href="https://replicate.com/account/api-tokens" target="_blank">Get free token ↗</a>
+      </div>
+      <div class="token-row">
+        <div class="token-input-wrap">
+          <input id="tokenInput" class="token-input" type="password"
+            placeholder="r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            onkeydown="if(event.key==='Enter') saveToken()">
+          <button class="toggle-vis" onclick="toggleVis()">👁</button>
+        </div>
+        <button id="btnSave" class="btn-save" onclick="saveToken()">Save</button>
+      </div>
+      <div id="tokenOk" class="token-ok hidden">✅ Token active for this session</div>
+    </div>
+
+    <!-- No token warning -->
+    <div id="warnBar" class="warn-bar">
+      ⚠️ Add your <a href="https://replicate.com/account/api-tokens" target="_blank">Replicate API token</a> above to start swapping. It's free to get.
+    </div>
+
+    <!-- Mode + Quality -->
+    <div class="controls-row">
+      <div class="tab-group">
+        <button class="tab active" id="tabPhoto" onclick="setMode('photo')">🖼 Photo</button>
+        <button class="tab" id="tabVideo" onclick="setMode('video')">🎬 Video</button>
+      </div>
+      <div class="quality-group">
+        Quality:
+        <div class="quality-tabs">
+          <button class="qtab active" id="qStandard" onclick="setQuality('standard')">Standard</button>
+          <button class="qtab" id="qAdvanced" onclick="setQuality('advanced')">✨ Advanced</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload zones -->
+    <div class="upload-grid">
+      <!-- Face -->
+      <div class="upload-zone-wrap">
+        <span class="zone-label">Your Face</span>
+        <div class="drop-zone" id="faceZone"
+          ondragover="handleDragOver(event,'face')"
+          ondragleave="handleDragLeave('face')"
+          ondrop="handleDrop(event,'face')"
+          onclick="document.getElementById('faceInput').click()">
+          <input type="file" id="faceInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'face')">
+          <div class="zone-icon" id="faceIcon">👤</div>
+          <div class="zone-text">
+            <p>Upload your face photo</p>
+            <small>Drag & drop or click to browse</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Target -->
+      <div class="upload-zone-wrap">
+        <span class="zone-label" id="targetLabel">Target Photo</span>
+        <div class="drop-zone" id="targetZone"
+          ondragover="handleDragOver(event,'target')"
+          ondragleave="handleDragLeave('target')"
+          ondrop="handleDrop(event,'target')"
+          onclick="document.getElementById('targetInput').click()">
+          <input type="file" id="targetInput" accept="image/*" style="display:none" onchange="handleFileInput(event,'target')">
+          <div class="zone-icon" id="targetIcon">🎯</div>
+          <div class="zone-text" id="targetText">
+            <p>Upload target photo</p>
+            <small>Drag & drop or click to browse</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="options-row">
+      <button class="toggle-btn" id="btnMultiface" onclick="toggleMultiface()">👥 Multiple Faces</button>
+      <span class="options-note" id="videoNote" style="display:none">Video: 1–5 min processing · No size or time limits</span>
+    </div>
+
+    <!-- Swap button -->
+    <button class="swap-btn" id="swapBtn" onclick="doSwap()">
+      <span id="swapBtnIcon">⚡</span>
+      <span id="swapBtnText">Swap Now</span>
+    </button>
+
+    <!-- Progress -->
+    <div class="progress-box hidden" id="progressBox">
+      <div class="progress-top">
+        <div class="progress-label">
+          <div class="spinner" id="progressSpinner"></div>
+          <span id="progressMsg">Processing...</span>
+        </div>
+        <span class="progress-pct" id="progressPct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-hint" id="progressHint"></div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box hidden" id="errorBox">
+      <div class="error-icon">⚠️</div>
+      <div>
+        <div class="error-title">Error</div>
+        <div class="error-msg" id="errorMsg"></div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box hidden" id="resultBox">
+      <div class="result-header">✅ Swap complete!</div>
+      <div class="result-media" id="resultMedia"></div>
+      <div class="result-actions">
+        <button class="btn-download" onclick="downloadResult()">⬇️ Download Result</button>
+        <button class="btn-new" onclick="resetAll()">🔄 New Swap</button>
+      </div>
+    </div>
+
+    <!-- Info cards (shown when idle) -->
+    <div class="info-grid" id="infoCards">
+      <div class="info-card">
+        <div class="icon">🎯</div>
+        <h3>Best Quality</h3>
+        <p>Top-ranked Replicate models — same tech as DeepSwap and commercial tools</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📁</div>
+        <h3>No Limits</h3>
+        <p>No file size cap, no time limit on videos, no watermarks ever</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🔒</div>
+        <h3>100% Private</h3>
+        <p>Runs on your own API key. Files go directly to Replicate — nothing stored here.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>grindspace · personal use only · powered by Replicate API</footer>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const REPLICATE_API = 'https://api.replicate.com/v1';
+const MODELS = {
+  photoStandard: 'codeplugtech/face-swap',
+  photoAdvanced: 'yan-ops/face-swap',
+  video: 'arielreplicate/roopified',
+};
+
+let state = {
+  token: sessionStorage.getItem('gs_token') || '',
+  mode: 'photo',
+  quality: 'standard',
+  multiface: false,
+  faceFile: null,
+  targetFile: null,
+  status: 'idle',  // idle | uploading | processing | done | error
+  resultUrl: null,
+  resultType: null,
+  pollTimer: null,
+};
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (state.token) {
+    document.getElementById('tokenInput').value = state.token;
+    updateTokenUI();
+  } else {
+    document.getElementById('tokenPanel').classList.remove('hidden');
+    document.getElementById('btnToken').classList.add('active');
+  }
+});
+
+// ── Token ─────────────────────────────────────────────────────────────────────
+function toggleSettings() {
+  const panel = document.getElementById('tokenPanel');
+  const btn = document.getElementById('btnToken');
+  panel.classList.toggle('hidden');
+  btn.classList.toggle('active');
+}
+
+function toggleVis() {
+  const inp = document.getElementById('tokenInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function saveToken() {
+  const val = document.getElementById('tokenInput').value.trim();
+  state.token = val;
+  sessionStorage.setItem('gs_token', val);
+  const btn = document.getElementById('btnSave');
+  btn.textContent = 'Saved ✓';
+  btn.classList.add('saved');
+  setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('saved'); }, 2000);
+  if (val) {
+    document.getElementById('tokenPanel').classList.add('hidden');
+    document.getElementById('btnToken').classList.remove('active');
+  }
+  updateTokenUI();
+}
+
+function updateTokenUI() {
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('statusLabel');
+  const warn = document.getElementById('warnBar');
+  const ok = document.getElementById('tokenOk');
+  if (state.token) {
+    dot.classList.add('connected');
+    label.textContent = 'API connected';
+    warn.classList.add('hidden');
+    ok.classList.remove('hidden');
+  } else {
+    dot.classList.remove('connected');
+    label.textContent = 'No token';
+    warn.classList.remove('hidden');
+    ok.classList.add('hidden');
+  }
+  updateSwapButton();
+}
+
+// ── Mode / Quality ────────────────────────────────────────────────────────────
+function setMode(m) {
+  state.mode = m;
+  document.getElementById('tabPhoto').classList.toggle('active', m === 'photo');
+  document.getElementById('tabVideo').classList.toggle('active', m === 'video');
+
+  const tLabel = document.getElementById('targetLabel');
+  const tText = document.getElementById('targetText');
+  const tInput = document.getElementById('targetInput');
+  const videoNote = document.getElementById('videoNote');
+
+  if (m === 'video') {
+    tLabel.textContent = 'Target Video';
+    tText.innerHTML = '<p>Upload target video</p><small>MP4, MOV, AVI, MKV, WebM</small>';
+    tInput.accept = 'video/*';
+    videoNote.style.display = 'block';
+  } else {
+    tLabel.textContent = 'Target Photo';
+    tText.innerHTML = '<p>Upload target photo</p><small>Drag & drop or click to browse</small>';
+    tInput.accept = 'image/*';
+    videoNote.style.display = 'none';
+  }
+
+  clearFile('target');
+  resetStatus();
+}
+
+function setQuality(q) {
+  state.quality = q;
+  document.getElementById('qStandard').classList.toggle('active', q === 'standard');
+  document.getElementById('qAdvanced').classList.toggle('active', q === 'advanced');
+}
+
+function toggleMultiface() {
+  state.multiface = !state.multiface;
+  document.getElementById('btnMultiface').classList.toggle('on', state.multiface);
+  document.getElementById('btnMultiface').textContent = state.multiface ? '👥 Multiple Faces ✓' : '👥 Multiple Faces';
+}
+
+// ── File Handling ─────────────────────────────────────────────────────────────
+function handleDragOver(e, zone) {
+  e.preventDefault();
+  document.getElementById(zone + 'Zone').classList.add('drag-over');
+}
+function handleDragLeave(zone) {
+  document.getElementById(zone + 'Zone').classList.remove('drag-over');
+}
+function handleDrop(e, zone) {
+  e.preventDefault();
+  document.getElementById(zone + 'Zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(zone, file);
+}
+function handleFileInput(e, zone) {
+  const file = e.target.files[0];
+  if (file) setFile(zone, file);
+}
+
+function setFile(zone, file) {
+  if (zone === 'face') {
+    state.faceFile = file;
+  } else {
+    state.targetFile = file;
+  }
+  showPreview(zone, file);
+  resetStatus();
+  updateSwapButton();
+}
+
+function clearFile(zone) {
+  if (zone === 'face') state.faceFile = null;
+  else state.targetFile = null;
+  const zoneEl = document.getElementById(zone + 'Zone');
+  zoneEl.classList.remove('has-file');
+
+  const icon = document.getElementById(zone + 'Icon');
+  icon.style.display = '';
+
+  // Remove preview elements
+  const img = zoneEl.querySelector('.preview-img');
+  const vid = zoneEl.querySelector('.preview-vid');
+  const ov = zoneEl.querySelector('.preview-overlay');
+  const cb = zoneEl.querySelector('.clear-btn');
+  const zoneText = zoneEl.querySelector('.zone-text');
+  if (img) img.remove();
+  if (vid) vid.remove();
+  if (ov) ov.remove();
+  if (cb) cb.remove();
+  if (zoneText) zoneText.style.display = '';
+
+  // Reset file input
+  document.getElementById(zone + 'Input').value = '';
+  updateSwapButton();
+}
+
+function showPreview(zone, file) {
+  const zoneEl = document.getElementById(zone + 'Zone');
+  zoneEl.classList.add('has-file');
+
+  const icon = document.getElementById(zone + 'Icon');
+  icon.style.display = 'none';
+
+  const zoneText = zoneEl.querySelector('.zone-text');
+  if (zoneText) zoneText.style.display = 'none';
+
+  // Remove existing preview
+  const old = zoneEl.querySelectorAll('.preview-img, .preview-vid, .preview-overlay, .clear-btn');
+  old.forEach(el => el.remove());
+
+  const url = URL.createObjectURL(file);
+
+  if (file.type.startsWith('video/')) {
+    const vid = document.createElement('video');
+    vid.className = 'preview-vid';
+    vid.src = url;
+    vid.controls = true;
+    vid.muted = true;
+    zoneEl.appendChild(vid);
+  } else {
+    const img = document.createElement('img');
+    img.className = 'preview-img';
+    img.src = url;
+    zoneEl.appendChild(img);
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'preview-overlay';
+  overlay.innerHTML = `<div class="preview-name">${file.name}</div><div class="preview-size">${(file.size/1024/1024).toFixed(1)} MB</div>`;
+  zoneEl.appendChild(overlay);
+
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'clear-btn';
+  clearBtn.innerHTML = '✕';
+  clearBtn.onclick = (e) => { e.stopPropagation(); clearFile(zone); };
+  zoneEl.appendChild(clearBtn);
+}
+
+// ── Swap Button State ─────────────────────────────────────────────────────────
+function updateSwapButton() {
+  const btn = document.getElementById('swapBtn');
+  const canSwap = state.faceFile && state.targetFile && state.status === 'idle';
+  btn.classList.toggle('ready', !!canSwap);
+}
+
+// ── Progress helpers ──────────────────────────────────────────────────────────
+function setProgress(pct, msg, hint = '') {
+  document.getElementById('progressBox').classList.remove('hidden');
+  document.getElementById('progressMsg').textContent = msg;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressHint').textContent = hint;
+  if (pct >= 100) {
+    document.getElementById('progressFill').classList.add('done');
+    document.getElementById('progressSpinner').style.display = 'none';
+  }
+}
+
+function resetStatus() {
+  state.status = 'idle';
+  if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
+  document.getElementById('progressBox').classList.add('hidden');
+  document.getElementById('errorBox').classList.add('hidden');
+  document.getElementById('resultBox').classList.add('hidden');
+  document.getElementById('infoCards').classList.remove('hidden');
+  document.getElementById('progressFill').classList.remove('done', 'error');
+  document.getElementById('progressSpinner').style.display = '';
+
+  const btn = document.getElementById('swapBtn');
+  btn.classList.remove('ready');
+  document.getElementById('swapBtnIcon').textContent = '⚡';
+  document.getElementById('swapBtnText').textContent = 'Swap Now';
+  updateSwapButton();
+}
+
+function resetAll() {
+  clearFile('face');
+  clearFile('target');
+  state.resultUrl = null;
+  state.resultType = null;
+  resetStatus();
+}
+
+function showError(msg) {
+  state.status = 'error';
+  document.getElementById('progressBox').classList.add('hidden');
+  document.getElementById('errorBox').classList.remove('hidden');
+  document.getElementById('errorMsg').textContent = msg;
+
+  const btn = document.getElementById('swapBtn');
+  btn.classList.add('ready');
+  document.getElementById('swapBtnIcon').textContent = '⚡';
+  document.getElementById('swapBtnText').textContent = 'Try Again';
+}
+
+// ── File to base64 ────────────────────────────────────────────────────────────
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Upload to Replicate Files API ─────────────────────────────────────────────
+async function uploadToReplicate(file) {
+  const res = await fetch(`${REPLICATE_API}/files`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${state.token}`,
+      'Content-Type': file.type || 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${file.name}"`,
+    },
+    body: file,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `File upload failed: ${res.status}`);
+  }
+  const data = await res.json();
+  return data.urls.get;
+}
+
+// ── Create prediction ─────────────────────────────────────────────────────────
+async function createPrediction(model, input) {
+  const res = await fetch(`${REPLICATE_API}/models/${model}/predictions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${state.token}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'wait=5',
+    },
+    body: JSON.stringify({ input }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    if (res.status === 401) throw new Error('Invalid API token. Check your Replicate token and try again.');
+    if (res.status === 402) throw new Error('Your Replicate credits ran out. Add a card at replicate.com/account/billing');
+    throw new Error(err.detail || `API error ${res.status}`);
+  }
+  return res.json();
+}
+
+// ── Poll until done ───────────────────────────────────────────────────────────
+function startPolling(predictionId) {
+  let pct = 45;
+  state.pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${REPLICATE_API}/predictions/${predictionId}`, {
+        headers: { 'Authorization': `Bearer ${state.token}` },
+      });
+      if (!res.ok) throw new Error(`Status check failed: ${res.status}`);
+      const data = await res.json();
+
+      pct = Math.min(pct + 7, 90);
+      setProgress(pct, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1–5 minutes. Page updates automatically.' : '');
+
+      if (data.status === 'succeeded') {
+        clearInterval(state.pollTimer);
+        state.pollTimer = null;
+        const output = data.output;
+        const url = Array.isArray(output) ? output[0] : output;
+        showResult(url);
+      } else if (data.status === 'failed' || data.status === 'canceled') {
+        clearInterval(state.pollTimer);
+        state.pollTimer = null;
+        showError(data.error || 'The model failed to process your files. Try a different image.');
+      }
+    } catch (err) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+      showError(err.message || 'Lost connection during processing.');
+    }
+  }, 3000);
+}
+
+// ── Show result ───────────────────────────────────────────────────────────────
+function showResult(url) {
+  state.resultUrl = url;
+  state.resultType = (state.mode === 'video' || url.endsWith('.mp4')) ? 'video' : 'image';
+  state.status = 'done';
+
+  setProgress(100, 'Swap complete!');
+
+  const media = document.getElementById('resultMedia');
+  media.innerHTML = '';
+  if (state.resultType === 'video') {
+    media.innerHTML = `<video src="${url}" controls autoplay muted loop></video>`;
+  } else {
+    media.innerHTML = `<img src="${url}" alt="Face swap result">`;
+  }
+
+  document.getElementById('resultBox').classList.remove('hidden');
+  document.getElementById('infoCards').classList.add('hidden');
+
+  const btn = document.getElementById('swapBtn');
+  btn.classList.add('ready');
+  document.getElementById('swapBtnIcon').textContent = '⚡';
+  document.getElementById('swapBtnText').textContent = 'Swap Now';
+}
+
+// ── Download ──────────────────────────────────────────────────────────────────
+async function downloadResult() {
+  if (!state.resultUrl) return;
+  try {
+    const res = await fetch(state.resultUrl);
+    const blob = await res.blob();
+    const ext = state.resultType === 'video' ? 'mp4' : 'jpg';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `grindspace_swap_${Date.now()}.${ext}`;
+    a.click();
+  } catch {
+    window.open(state.resultUrl, '_blank');
+  }
+}
+
+// ── Main Swap ─────────────────────────────────────────────────────────────────
+async function doSwap() {
+  if (state.status === 'uploading' || state.status === 'processing') return;
+  if (!state.token) { document.getElementById('tokenPanel').classList.remove('hidden'); document.getElementById('btnToken').classList.add('active'); return; }
+  if (!state.faceFile || !state.targetFile) return;
+
+  state.status = 'uploading';
+  document.getElementById('infoCards').classList.add('hidden');
+  document.getElementById('errorBox').classList.add('hidden');
+  document.getElementById('resultBox').classList.add('hidden');
+  document.getElementById('progressFill').classList.remove('done', 'error');
+  document.getElementById('progressSpinner').style.display = '';
+
+  const btn = document.getElementById('swapBtn');
+  btn.classList.remove('ready');
+  document.getElementById('swapBtnIcon').innerHTML = '<div class="spinner"></div>';
+  document.getElementById('swapBtnText').textContent = 'Processing...';
+
+  try {
+    const model = state.mode === 'video'
+      ? MODELS.video
+      : (state.quality === 'advanced' || state.multiface ? MODELS.photoAdvanced : MODELS.photoStandard);
+
+    // Upload face
+    let faceInput;
+    if (state.faceFile.size < 10 * 1024 * 1024) {
+      setProgress(10, 'Converting face image...');
+      faceInput = await fileToBase64(state.faceFile);
+    } else {
+      setProgress(10, 'Uploading face image...');
+      faceInput = await uploadToReplicate(state.faceFile);
+    }
+    setProgress(25, 'Face image ready ✓');
+
+    // Upload target
+    let targetInput;
+    if (state.mode === 'photo' && state.targetFile.size < 10 * 1024 * 1024) {
+      setProgress(30, 'Converting target image...');
+      targetInput = await fileToBase64(state.targetFile);
+    } else {
+      setProgress(30, `Uploading target ${state.mode}... (${(state.targetFile.size/1024/1024).toFixed(0)} MB)`);
+      targetInput = await uploadToReplicate(state.targetFile);
+    }
+    setProgress(40, 'Files ready, starting AI...');
+
+    // Build input
+    let input;
+    if (model === MODELS.photoStandard) {
+      input = { swap_image: faceInput, target_image: targetInput };
+    } else if (model === MODELS.photoAdvanced) {
+      input = { source_image: faceInput, target_image: targetInput };
+    } else {
+      input = { source_img: faceInput, target_path: targetInput };
+    }
+
+    // Create prediction
+    setProgress(43, 'Sending to AI model...');
+    state.status = 'processing';
+    const prediction = await createPrediction(model, input);
+
+    // Check if already done (fast prediction with Prefer: wait=5)
+    if (prediction.status === 'succeeded') {
+      const output = prediction.output;
+      const url = Array.isArray(output) ? output[0] : output;
+      showResult(url);
+    } else {
+      // Poll for result
+      setProgress(45, 'AI is processing your swap...', state.mode === 'video' ? 'Video processing can take 1–5 min. Auto-updates.' : '');
+      startPolling(prediction.id);
+    }
+
+  } catch (err) {
+    showError(err.message || 'Something went wrong. Check your API token and try again.');
+  }
+}
+</script>
+</body>
+</html>
