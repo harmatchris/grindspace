@@ -469,7 +469,24 @@ select:focus{border-color:var(--accent)}
 </div>
 
 <script>
-const PROXY = 'https://far-robin-63.harmatchris.deno.net';
+// ── Proxy / direct config ──────────────────────────────────────────────────
+// After deploying the Cloudflare Worker (grindspace-proxy.worker.js),
+// replace the URL below with your *.workers.dev URL.
+const PROXY = 'https://grindspace-proxy.harmatchris.workers.dev';
+const DIRECT = 'https://api.wavespeed.ai';
+
+// Tries direct API call first (fastest); falls back to CF Worker on CORS error.
+async function apiFetch(path, options = {}) {
+  for (const base of [DIRECT, PROXY]) {
+    try {
+      const r = await fetch(base + path, options);
+      return r;
+    } catch (e) {
+      if (base === DIRECT) continue; // likely CORS block — retry via proxy
+      throw e; // proxy also failed, bubble up
+    }
+  }
+}
 
 // ─── Auth / Session ───────────────────────────────────────────────────────────
 const AUTH_USER = 'rolfseinvater';
@@ -589,7 +606,7 @@ async function fetchBalance() {
   pill.className = 'balance-pill loading';
   amt.textContent = '—';
   try {
-    const r = await fetch(PROXY + '/api/v3/balance', {
+    const r = await apiFetch('/api/v3/balance', {
       headers: { 'Authorization': `Bearer ${apiKey}` }
     });
     const d = await r.json();
@@ -1171,7 +1188,7 @@ async function preflight(minCost) {
   if (keyErr) { toast('\u26A0\uFE0F ' + keyErr); return false; }
   // Quick balance check
   try {
-    const r = await fetch(PROXY + '/api/v3/balance', { headers: {'Authorization': `Bearer ${apiKey}`} });
+    const r = await apiFetch('/api/v3/balance', { headers: {'Authorization': `Bearer ${apiKey}`} });
     const d = await r.json();
     if (r.status === 401 || r.status === 403) {
       toast('\u{1F512} Unauthorized \u2014 check your WaveSpeed API key at wavespeed.ai/accesskey. No credits used.');
@@ -1198,7 +1215,7 @@ async function preflight(minCost) {
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function apiPost(path, body) {
-  const r = await fetch(PROXY + path, {
+  const r = await apiFetch(path, {
     method: 'POST',
     headers: {'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json'},
     body: JSON.stringify(body)
@@ -1210,7 +1227,7 @@ async function apiPost(path, body) {
 }
 
 // Try direct API first (single hop = faster, no proxy timeout risk).
-// If CORS blocks it (status 0), fall back to the Deno proxy automatically.
+// If CORS blocks it (status 0), fall back to the CF Worker proxy automatically.
 async function uploadFileXHR(file, onPct, progressBarId) {
   if (progressBarId) {
     const wrap = document.getElementById(progressBarId);
@@ -1281,7 +1298,7 @@ async function poll(predId, job, steps, stepId) {
     if (job.cancelled) throw new Error('Cancelled');
     let d;
     try {
-      const r = await fetch(`${PROXY}/api/v3/predictions/${predId}/result`, { headers:{'Authorization':`Bearer ${apiKey}`} });
+      const r = await apiFetch(`/api/v3/predictions/${predId}/result`, { headers:{'Authorization':`Bearer ${apiKey}`} });
       d = await r.json();
     } catch(e) { continue; } // transient blip — keep trying
     const p = d?.data;
