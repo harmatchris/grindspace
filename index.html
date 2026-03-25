@@ -1894,6 +1894,16 @@ async function doMultiSwap() {
   if (!await preflight(minCost)) { setBtn('multi', false, 'Swap All Faces'); return; }
   setBtn('multi', false, 'Swap All Faces');
   const t0 = Date.now();
+  if (selectedProvider === 'piapi') {
+    if (mfIsVideo) await doMultiSwapVideoPiAPI(idxs, t0);
+    else           await doMultiSwapImagePiAPI(idxs, t0);
+    return;
+  }
+  if (selectedProvider === 'replicate') {
+    if (mfIsVideo) { toast('Replicate does not support video — switch to WaveSpeed or PiAPI for video.'); return; }
+    await doMultiSwapImageReplicate(idxs, t0);
+    return;
+  }
   if (mfIsVideo) await doMultiSwapVideo(idxs, t0);
   else           await doMultiSwapImage(idxs, t0);
 }
@@ -1948,6 +1958,122 @@ async function doMultiSwapVideo(idxs, t0) {
     }
     stopJobGhost(job, true);
     showJobResult(job, currentUrl, true, Math.round((Date.now()-t0)/1000)+'s total', '$'+(idxs.length*mfVideoDuration*0.01).toFixed(2));
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
+// ─── Multi-Face PiAPI ─────────────────────────────────────────────────────────
+async function doMultiSwapImagePiAPI(idxs, t0) {
+  const job = createJob(`Multi-Face Swap · PiAPI (${idxs.length} face${idxs.length>1?'s':''})`);
+  const steps = jobSteps(job, idxs.map(i => ({id:'f'+i, label:`Face ${i} · PiAPI`})));
+  startJobGhost(job, idxs.length * 30000);
+  let current = F['multi-target'].dataUrl; // base64 for first pass
+  try {
+    for (let k = 0; k < idxs.length; k++) {
+      const i = idxs[k];
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'f'+i, 'active');
+      const body = {
+        model: 'Qubico/image-toolkit', task_type: 'face-swap',
+        input: { target_image: current, swap_image: mfAssigned[i].dataUrl }
+      };
+      const r = await fetch(PROXY + '/piapi/api/v1/task', {
+        method: 'POST',
+        headers: { 'x-api-key': apiKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d?.message || `PiAPI HTTP ${r.status}`);
+      const taskId = d?.data?.task_id;
+      if (!taskId) throw new Error('No task ID from PiAPI');
+      const url = await pollPiAPI(taskId, job, steps, 'f'+i);
+      if (job.cancelled) return;
+      // Convert result URL to base64 for next iteration (except last)
+      current = (k < idxs.length - 1) ? await toBase64(url) : url;
+    }
+    stopJobGhost(job, true);
+    showJobResult(job, current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `~$${(idxs.length*0.02).toFixed(2)}`);
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
+async function doMultiSwapVideoPiAPI(idxs, t0) {
+  const job = createJob(`Multi-Face Video · PiAPI (${idxs.length} face${idxs.length>1?'s':''})`);
+  const steps = jobSteps(job, [
+    {id:'upload', label:'Uploading video'},
+    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · PiAPI`}))
+  ]);
+  markJobStep(job, steps, 'upload', 'active');
+  try {
+    const origUrl = await uploadFileXHR(F['multi-target'].file, pct => setJobUploadPct(job, pct), 'mf-uprog');
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    startJobGhost(job, Math.max(60, mfVideoDuration * 6 * idxs.length + 20) * 1000);
+    let currentUrl = origUrl;
+    for (let k = 0; k < idxs.length; k++) {
+      const i = idxs[k];
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'f'+i, 'active');
+      const body = {
+        model: 'Qubico/video-toolkit', task_type: 'face-swap',
+        input: { swap_image: mfAssigned[i].dataUrl, target_video: currentUrl, swap_faces_index: 0, target_faces_index: i }
+      };
+      const r = await fetch(PROXY + '/piapi/api/v1/task', {
+        method: 'POST',
+        headers: { 'x-api-key': apiKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d?.message || `PiAPI HTTP ${r.status}`);
+      const taskId = d?.data?.task_id;
+      if (!taskId) throw new Error('No task ID from PiAPI');
+      currentUrl = await pollPiAPI(taskId, job, steps, 'f'+i);
+      if (job.cancelled) return;
+    }
+    stopJobGhost(job, true);
+    showJobResult(job, currentUrl, true, Math.round((Date.now()-t0)/1000)+'s total', `~$${(idxs.length*mfVideoDuration*0.01).toFixed(2)}`);
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
+// ─── Multi-Face Replicate ─────────────────────────────────────────────────────
+async function doMultiSwapImageReplicate(idxs, t0) {
+  const model = pOpts.replicate.model || 'easel/advanced-face-swap';
+  const job = createJob(`Multi-Face Swap · Replicate (${idxs.length} face${idxs.length>1?'s':''})`);
+  const steps = jobSteps(job, [
+    {id:'upload', label:'Uploading images'},
+    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · Replicate`}))
+  ]);
+  markJobStep(job, steps, 'upload', 'active');
+  startJobGhost(job, idxs.length * 50000);
+  try {
+    // Upload all face images and the target image up front
+    const faceUploads = await Promise.all(idxs.map(i => uploadFileXHR(mfAssigned[i].file, null, null)));
+    let currentUrl = await uploadFileXHR(F['multi-target'].file, null, null);
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    for (let k = 0; k < idxs.length; k++) {
+      const i = idxs[k];
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'f'+i, 'active');
+      const input = { target_image: currentUrl, swap_image: faceUploads[k] };
+      if (pOpts.replicate.upscale) input.upscale = true;
+      if (pOpts.replicate.gender) input.user_gender = pOpts.replicate.gender;
+      const r = await fetch(PROXY + `/replicate/v1/models/${model}/predictions`, {
+        method: 'POST',
+        headers: { 'Authorization': `Token ${apiKey()}`, 'Content-Type': 'application/json', 'Prefer': 'wait' },
+        body: JSON.stringify({ input })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d?.detail || d?.error || `Replicate HTTP ${r.status}`);
+      if (d.status === 'succeeded') {
+        currentUrl = Array.isArray(d.output) ? d.output[0] : d.output;
+      } else {
+        const predId = d?.id;
+        if (!predId) throw new Error('No prediction ID from Replicate');
+        currentUrl = await pollReplicate(predId, job, steps, 'f'+i);
+      }
+      if (job.cancelled) return;
+    }
+    stopJobGhost(job, true);
+    showJobResult(job, currentUrl, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `~$${(idxs.length*0.003).toFixed(3)}`);
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
