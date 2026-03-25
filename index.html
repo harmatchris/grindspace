@@ -295,7 +295,7 @@ select:focus{border-color:var(--accent)}
   </div>
   <!-- Balance + Top-up -->
   <div class="balance-widget">
-    <div class="balance-pill loading" id="bal-pill" title="WaveSpeed balance — refreshes automatically">
+    <div class="balance-pill loading" id="bal-pill" title="WaveSpeed balance — click to top up" onclick="window.open('https://wavespeed.ai/billing','_blank')" style="cursor:pointer">
       <div class="bal-spin"></div>
       <span class="bal-icon">&#128176;</span>
       <span class="bal-amt" id="bal-amt">—</span>
@@ -528,6 +528,25 @@ async function apiFetch(path, options = {}) {
   }
 }
 
+// ─── Download helper (blob fetch → forces save dialog, no new-tab) ───────────
+async function downloadResult(url, filename) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('fetch failed');
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  } catch(e) {
+    // CORS fallback — open in new tab so user can long-press save
+    window.open(url, '_blank');
+    toast('Tip: long-press the video/image and choose "Save"');
+  }
+}
+
 // ─── Auth / Session ───────────────────────────────────────────────────────────
 const AUTH_USER = 'rolfseinvater';
 const AUTH_PASS = '9009';
@@ -715,10 +734,10 @@ function _renderJobCard(job) {
     </div>
     <div class="result-media" id="${jid}-media" style="display:none"></div>
     <div class="result-actions" id="${jid}-actions" style="display:none">
-      <a class="btn-dl" id="${jid}-dl" href="#" download target="_blank">
+      <button class="btn-dl" id="${jid}-dl" onclick="">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download
-      </a>
+      </button>
       <button class="job-dismiss" onclick="removeJob('${jid}')">Dismiss</button>
     </div>
     <div class="result-meta" id="${jid}-meta"></div>`;
@@ -827,7 +846,7 @@ function showJobResult(job, url, isVid, time, cost) {
     const actions = document.getElementById(job.id + '-actions');
     const meta    = document.getElementById(job.id + '-meta');
     if (med) { med.style.display = 'block'; med.innerHTML = isVid ? `<video src="${url}" controls autoplay loop muted playsinline></video>` : `<img src="${url}" alt="result">`; }
-    if (dl)      { dl.href = url; dl.download = isVid ? 'grindspace.mp4' : 'grindspace.jpg'; }
+    if (dl)      { dl.onclick = () => downloadResult(url, isVid ? 'grindspace.mp4' : 'grindspace.jpg'); }
     if (actions) actions.style.display = 'flex';
     if (meta)    meta.innerHTML = `<span>&#9201; ${time}</span><span>&#128176; ${cost}</span>`;
   }, 1000);
