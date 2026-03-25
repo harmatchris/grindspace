@@ -364,6 +364,14 @@ select:focus{border-color:var(--accent)}
           <span class="prov-price">+2× upscale</span>
         </div>
       </button>
+      <button class="prov-card" id="prov-akool" onclick="selectProvider('akool')">
+        <span class="prov-name">💎 Akool</span>
+        <span class="prov-tag">Premium quality</span>
+        <div class="prov-prices">
+          <span class="prov-price">~$0.05/photo</span>
+          <span class="prov-price">$0.05/sec video</span>
+        </div>
+      </button>
     </div>
   </div>
   <!-- Provider options bar (key + feature toggles) -->
@@ -570,7 +578,8 @@ select:focus{border-color:var(--accent)}
 
 <script>
 // ── Proxy / direct config ──────────────────────────────────────────────────
-const PROXY = 'https://super-violet-6273.harmatchris.workers.dev';
+const PROXY  = 'https://super-violet-6273.harmatchris.workers.dev';
+const AKOOL  = 'https://openapi.akool.com'; // Called directly — has CORS support
 const DIRECT = 'https://api.wavespeed.ai';
 
 // Tries direct API call first (fastest); falls back to CF Worker on CORS error.
@@ -695,9 +704,10 @@ let mfVideoDuration = 0;
 
 // ─── Multi-provider state ──────────────────────────────────────────────────────
 const PROVIDERS = {
-  wavespeed: { name: 'WaveSpeed', lsKey: 'wsKey', color: '#7c3aed' },
-  piapi:     { name: 'PiAPI',     lsKey: 'piKey', color: '#2563eb' },
-  replicate: { name: 'Replicate', lsKey: 'repKey', color: '#059669' }
+  wavespeed: { name: 'WaveSpeed', lsKey: 'wsKey',  color: '#7c3aed' },
+  piapi:     { name: 'PiAPI',     lsKey: 'piKey',  color: '#2563eb' },
+  replicate: { name: 'Replicate', lsKey: 'repKey', color: '#059669' },
+  akool:     { name: 'Akool',     lsKey: 'akKey',  color: '#d97706' }
 };
 let selectedProvider = localStorage.getItem('gs_provider') || 'wavespeed';
 // Per-provider keys
@@ -707,7 +717,8 @@ Object.keys(PROVIDERS).forEach(p => { pKeys[p] = localStorage.getItem(PROVIDERS[
 const pOpts = {
   wavespeed: {},
   piapi:     { faceEnhance: false },
-  replicate: { upscale: false, model: 'easel/advanced-face-swap', gender: '' }
+  replicate: { upscale: false, model: 'easel/advanced-face-swap', gender: '' },
+  akool:     { faceEnhance: false }
 };
 // Convenience getter — always returns the active provider's key
 function apiKey() { return pKeys[selectedProvider] || ''; }
@@ -755,9 +766,19 @@ function updateProviderOptsBar() {
         <input type="checkbox" ${pOpts.piapi.faceEnhance?'checked':''} onchange="pOpts.piapi.faceEnhance=this.checked">
         Face Enhance
       </label>`;
+  } else if (p === 'akool') {
+    extraOpts = `
+      <label class="prov-opt-toggle">
+        <input type="checkbox" ${pOpts.akool.faceEnhance?'checked':''} onchange="pOpts.akool.faceEnhance=this.checked">
+        Face Enhance
+      </label>
+      <span class="prov-note">Premium — uploads via WaveSpeed for URLs</span>`;
   }
 
-  const placeholder = p === 'wavespeed' ? 'WaveSpeed API key…' : p === 'piapi' ? 'PiAPI x-api-key…' : 'Replicate API token…';
+  const placeholder = p === 'wavespeed' ? 'WaveSpeed API key…'
+    : p === 'piapi'     ? 'PiAPI x-api-key…'
+    : p === 'akool'     ? 'Akool API key…'
+    : 'Replicate API token…';
   bar.innerHTML = `
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     <div class="prov-key-wrap${saved}" id="prov-key-wrap-${p}">
@@ -1809,10 +1830,213 @@ async function pollReplicate(predId, job, steps, stepId) {
   throw new Error('Replicate polling limit reached');
 }
 
+// ─── Akool Swap ───────────────────────────────────────────────────────────────
+// Akool needs public URLs — we upload via WaveSpeed upload first (no WS credit cost)
+async function doPhotoSwapAkool() {
+  if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
+  setBtn('photo', true, 'Starting…');
+  if (!await preflight(0)) { setBtn('photo', false, 'Swap Face'); return; }
+  setBtn('photo', false, 'Swap Face');
+  const t0 = Date.now();
+  const job = createJob('Photo Swap · Akool');
+  const steps = jobSteps(job, [{id:'upload', label:'Uploading images'}, {id:'swap', label:'Akool processing'}]);
+  markJobStep(job, steps, 'upload', 'active');
+  startJobGhost(job, 45000);
+  try {
+    const [targetUrl, faceUrl] = await Promise.all([
+      uploadFileXHR(F['photo-target'].file, null, null),
+      uploadFileXHR(F['photo-face'].file,   null, null)
+    ]);
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    markJobStep(job, steps, 'swap', 'active');
+    const body = {
+      sourceImage: [{ path: faceUrl }],
+      targetImage: [{ path: targetUrl }],
+      model_name: 'akool_faceswap_image_hq',
+      face_enhance: !!pOpts.akool.faceEnhance
+    };
+    const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByImage', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok || d.code !== 1000) throw new Error(d?.msg || d?.message || `Akool HTTP ${r.status}`);
+    const jobId = d?.data?._id;
+    if (!jobId) throw new Error('No job ID from Akool');
+    const url = await pollAkool(jobId, job, steps, 'swap', false);
+    if (job.cancelled) return;
+    stopJobGhost(job, true);
+    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '~$0.05');
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
+async function doVideoSwapAkool() {
+  if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
+  setBtn('video', true, 'Starting…');
+  if (!await preflight(0)) { setBtn('video', false, 'Swap Face'); return; }
+  setBtn('video', false, 'Swap Face');
+  const t0 = Date.now();
+  const job = createJob('Video Swap · Akool');
+  const hasTrim = _vTrimEnd !== null && !(_vTrimStart === 0 && _vTrimEnd >= Math.floor(_vTrimDur));
+  const stepDefs = hasTrim
+    ? [{id:'trim',label:`Trimming (${fmtSec(_vTrimStart)}→${fmtSec(_vTrimEnd)})`},{id:'upload',label:'Uploading files'},{id:'swap',label:'Akool processing'}]
+    : [{id:'upload',label:'Uploading files'},{id:'swap',label:'Akool processing'}];
+  const steps = jobSteps(job, stepDefs);
+  if (hasTrim) markJobStep(job, steps, 'trim', 'active');
+  else markJobStep(job, steps, 'upload', 'active');
+  try {
+    const fileToSwap = await trimVideoIfNeeded(F['video-target'].file);
+    if (job.cancelled) return;
+    if (hasTrim) { markJobStep(job, steps, 'trim', 'done'); markJobStep(job, steps, 'upload', 'active'); }
+    const [videoUrl, faceUrl] = await Promise.all([
+      uploadFileXHR(fileToSwap, pct => setJobUploadPct(job, pct), 'uprog'),
+      uploadFileXHR(F['video-face'].file, null, null)
+    ]);
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    markJobStep(job, steps, 'swap', 'active');
+    const clipDur = hasTrim ? (_vTrimEnd - _vTrimStart) : _vTrimDur || 30;
+    startJobGhost(job, Math.max(60, clipDur * 6 + 20) * 1000);
+    const body = {
+      sourceImage: [{ path: faceUrl }],
+      targetVideo: [{ path: videoUrl }],
+      face_enhance: !!pOpts.akool.faceEnhance
+    };
+    const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByVideo', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok || d.code !== 1000) throw new Error(d?.msg || d?.message || `Akool HTTP ${r.status}`);
+    const jobId = d?.data?._id;
+    if (!jobId) throw new Error('No job ID from Akool');
+    const url = await pollAkool(jobId, job, steps, 'swap', true);
+    if (job.cancelled) return;
+    stopJobGhost(job, true);
+    const cost = clipDur ? '$'+(clipDur*0.05).toFixed(2) : '?';
+    showJobResult(job, url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
+async function pollAkool(jobId, job, steps, stepId, isVideo) {
+  const deadline = Date.now() + 30 * 60 * 1000;
+  for (let i = 0; i < 600; i++) {
+    if (job.cancelled) throw new Error('Cancelled');
+    if (Date.now() > deadline) throw new Error('Akool took over 30 min — check akool.com.');
+    await sleep(3000);
+    if (job.cancelled) throw new Error('Cancelled');
+    let d;
+    try {
+      const r = await fetch(AKOOL + `/api/open/v4/faceswap/getInfo?_id=${jobId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey()}` }
+      });
+      d = await r.json();
+    } catch(e) { continue; }
+    const status = d?.data?.faceswap_status;
+    const eta = document.getElementById(job.id + '-eta');
+    if (eta) {
+      if (status === 1) eta.textContent = 'Akool: queued…';
+      else if (status === 2) eta.textContent = 'Akool: processing…';
+    }
+    if (status === 3) {
+      const out = d?.data;
+      const url = out?.video_url || out?.url || out?.output_url || out?.result_url;
+      if (url) return url;
+      throw new Error('Akool completed but no output URL in response');
+    }
+    if (status === 4) throw new Error(d?.data?.error || 'Akool processing failed');
+  }
+  throw new Error('Akool polling limit reached');
+}
+
+// ─── Multi-Face Akool ─────────────────────────────────────────────────────────
+async function doMultiSwapImageAkool(idxs, t0) {
+  const job = createJob(`Multi-Face Swap · Akool (${idxs.length} face${idxs.length>1?'s':''})`);
+  const steps = jobSteps(job, [
+    {id:'upload', label:'Uploading images'},
+    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · Akool`}))
+  ]);
+  markJobStep(job, steps, 'upload', 'active');
+  startJobGhost(job, idxs.length * 50000);
+  try {
+    const faceUploads = await Promise.all(idxs.map(i => uploadFileXHR(mfAssigned[i].file, null, null)));
+    let currentUrl = await uploadFileXHR(F['multi-target'].file, null, null);
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    for (let k = 0; k < idxs.length; k++) {
+      const i = idxs[k];
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'f'+i, 'active');
+      const body = {
+        sourceImage: [{ path: faceUploads[k] }],
+        targetImage: [{ path: currentUrl }],
+        model_name: 'akool_faceswap_image_hq',
+        face_enhance: !!pOpts.akool.faceEnhance
+      };
+      const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByImage', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (!r.ok || d.code !== 1000) throw new Error(d?.msg || `Akool HTTP ${r.status}`);
+      const jobId = d?.data?._id;
+      if (!jobId) throw new Error('No job ID from Akool');
+      currentUrl = await pollAkool(jobId, job, steps, 'f'+i, false);
+      if (job.cancelled) return;
+    }
+    stopJobGhost(job, true);
+    showJobResult(job, currentUrl, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `~$${(idxs.length*0.05).toFixed(2)}`);
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
+async function doMultiSwapVideoAkool(idxs, t0) {
+  const job = createJob(`Multi-Face Video · Akool (${idxs.length} face${idxs.length>1?'s':''})`);
+  const steps = jobSteps(job, [
+    {id:'upload', label:'Uploading files'},
+    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · Akool`}))
+  ]);
+  markJobStep(job, steps, 'upload', 'active');
+  try {
+    const faceUploads = await Promise.all(idxs.map(i => uploadFileXHR(mfAssigned[i].file, null, null)));
+    let currentVideoUrl = await uploadFileXHR(F['multi-target'].file, pct => setJobUploadPct(job, pct), 'mf-uprog');
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    startJobGhost(job, Math.max(60, mfVideoDuration * 6 * idxs.length + 20) * 1000);
+    for (let k = 0; k < idxs.length; k++) {
+      const i = idxs[k];
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'f'+i, 'active');
+      const body = {
+        sourceImage: [{ path: faceUploads[k] }],
+        targetVideo: [{ path: currentVideoUrl }],
+        face_enhance: !!pOpts.akool.faceEnhance
+      };
+      const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByVideo', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (!r.ok || d.code !== 1000) throw new Error(d?.msg || `Akool HTTP ${r.status}`);
+      const jobId = d?.data?._id;
+      if (!jobId) throw new Error('No job ID from Akool');
+      currentVideoUrl = await pollAkool(jobId, job, steps, 'f'+i, true);
+      if (job.cancelled) return;
+    }
+    stopJobGhost(job, true);
+    showJobResult(job, currentVideoUrl, true, Math.round((Date.now()-t0)/1000)+'s total', `~$${(idxs.length*mfVideoDuration*0.05).toFixed(2)}`);
+  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
 // ─── Photo Swap ───────────────────────────────────────────────────────────────
 async function doPhotoSwap() {
   if (selectedProvider === 'piapi') return doPhotoSwapPiAPI();
   if (selectedProvider === 'replicate') return doPhotoSwapReplicate();
+  if (selectedProvider === 'akool') return doPhotoSwapAkool();
   if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
   setBtn('photo', true, 'Starting\u2026');
   if (!await preflight(0.012)) { setBtn('photo', false, 'Swap Face'); return; }
@@ -1841,6 +2065,7 @@ async function doPhotoSwap() {
 // ─── Video Swap ───────────────────────────────────────────────────────────────
 async function doVideoSwap() {
   if (selectedProvider === 'piapi') return doVideoSwapPiAPI();
+  if (selectedProvider === 'akool') return doVideoSwapAkool();
   if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
   setBtn('video', true, 'Starting\u2026');
   if (!await preflight(0.01)) { setBtn('video', false, 'Swap Face'); return; }
@@ -1902,6 +2127,11 @@ async function doMultiSwap() {
   if (selectedProvider === 'replicate') {
     if (mfIsVideo) { toast('Replicate does not support video — switch to WaveSpeed or PiAPI for video.'); return; }
     await doMultiSwapImageReplicate(idxs, t0);
+    return;
+  }
+  if (selectedProvider === 'akool') {
+    if (mfIsVideo) await doMultiSwapVideoAkool(idxs, t0);
+    else           await doMultiSwapImageAkool(idxs, t0);
     return;
   }
   if (mfIsVideo) await doMultiSwapVideo(idxs, t0);
