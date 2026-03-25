@@ -211,6 +211,27 @@ select:focus{border-color:var(--accent)}
 .btn-lock{display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--sub);border-radius:9px;font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-lock:hover{border-color:var(--danger);color:var(--danger)}
 
+/* ── Mobile header ─────────────────────────────────────── */
+@media(max-width:640px){
+  header{flex-wrap:wrap;padding:10px 14px 10px;gap:6px 10px}
+  .header-center{order:10;width:100%;max-width:100%}
+  .btn-lock,.btn-topup{display:none!important}
+  .balance-widget{margin-left:auto}
+  .logo-text p{display:none}
+}
+
+/* ── Video Trim UI ─────────────────────────────────────── */
+.video-trim-wrap{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.trim-preview-vid{width:100%;max-height:240px;display:block;background:#000}
+.trim-controls{padding:14px 16px 12px;display:flex;flex-direction:column;gap:10px}
+.trim-row{display:flex;align-items:center;gap:10px}
+.trim-row label{font-size:11px;color:var(--sub);width:34px;flex-shrink:0;text-transform:uppercase;letter-spacing:.4px}
+.trim-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
+.trim-time{font-size:12px;font-weight:700;color:var(--text);min-width:38px;text-align:right;font-variant-numeric:tabular-nums;font-family:monospace}
+.trim-info-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub);padding-top:4px;border-top:1px solid var(--border)}
+.trim-badge{background:rgba(124,58,237,.18);border:1px solid rgba(168,85,247,.3);color:var(--accent-l);border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700}
+.trim-recording-note{font-size:10px;color:var(--sub);text-align:center;padding:4px 0 0;display:none}
+
 /* LOGIN OVERLAY */
 .login-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:24px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
@@ -369,6 +390,27 @@ select:focus{border-color:var(--accent)}
       </div>
       <div id="video-meta" style="display:none" class="video-meta">
         <span id="video-info"></span><span id="video-cost" class="cost-note"></span>
+      </div>
+      <!-- Video preview + trim selector -->
+      <div id="video-trim-ui" style="display:none" class="video-trim-wrap">
+        <video id="trim-preview-vid" class="trim-preview-vid" controls preload="metadata"></video>
+        <div class="trim-controls">
+          <div class="trim-row">
+            <label>Start</label>
+            <input type="range" id="trim-start" min="0" step="1" value="0" oninput="onTrimChange()">
+            <span class="trim-time" id="trim-start-lbl">0:00</span>
+          </div>
+          <div class="trim-row">
+            <label>End</label>
+            <input type="range" id="trim-end" min="0" step="1" value="0" oninput="onTrimChange()">
+            <span class="trim-time" id="trim-end-lbl">0:00</span>
+          </div>
+          <div class="trim-info-row">
+            <span id="trim-info-text" style="color:var(--sub)">Full video</span>
+            <span class="trim-badge" id="trim-cost-badge">—</span>
+          </div>
+          <div class="trim-recording-note" id="trim-rec-note">⏺ Trimming records the clip in real time — takes as long as the selected section</div>
+        </div>
       </div>
       <div class="uprog" id="uprog"><div class="uprog-bar" id="uprog-bar"></div></div>
     </div>
@@ -873,14 +915,21 @@ function triggerFile(id) { document.getElementById(id).click(); }
 
 function onFilePick(input, key) {
   const file = input.files[0]; if (!file) return;
-  const r = new FileReader();
-  r.onload = e => { F[key] = {file, dataUrl: e.target.result}; afterLoad(key, file, e.target.result); };
-  r.readAsDataURL(file);
+  if (file.type.startsWith('video/')) {
+    // createObjectURL is instant — no need to read 80MB into base64
+    const blobUrl = URL.createObjectURL(file);
+    F[key] = {file, dataUrl: blobUrl, isBlobUrl: true};
+    afterLoad(key, file, blobUrl);
+  } else {
+    const r = new FileReader();
+    r.onload = e => { F[key] = {file, dataUrl: e.target.result}; afterLoad(key, file, e.target.result); };
+    r.readAsDataURL(file);
+  }
 }
 
 function afterLoad(key, file, dataUrl) {
   showPreview(key, file, dataUrl);
-  if (key === 'video-target') loadVideoDuration(file, dataUrl, 'video-info', 'video-cost', 'video-meta', null);
+  if (key === 'video-target') { loadVideoDuration(file, dataUrl, 'video-info', 'video-cost', 'video-meta', null); initVideoTrimUI(dataUrl); }
   if (key === 'multi-target') {
     if (mfIsVideo) {
       loadVideoDuration(file, dataUrl, 'mf-video-info', 'mf-video-cost', 'mf-video-meta', dur => {
@@ -914,6 +963,7 @@ function showPreview(key, file, dataUrl) {
 
 function removeFile(key, e) {
   if (e) e.stopPropagation();
+  if (F[key]?.isBlobUrl) URL.revokeObjectURL(F[key].dataUrl);
   delete F[key];
   const empty = document.getElementById('ph-' + key + '-empty');
   const filled = document.getElementById('ph-' + key + '-filled');
@@ -924,8 +974,88 @@ function removeFile(key, e) {
   if (uz) uz.classList.remove('has-file');
   if (inp) inp.value = '';
   if (key === 'multi-target') resetMF();
-  if (key === 'video-target') document.getElementById('video-meta').style.display = 'none';
+  if (key === 'video-target') { document.getElementById('video-meta').style.display = 'none'; hideVideoTrimUI(); }
   checkBtns();
+}
+
+// ─── Video Trim ───────────────────────────────────────────────────────────────
+let _vTrimDur = 0, _vTrimStart = 0, _vTrimEnd = null;
+
+function fmtSec(s) {
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+function initVideoTrimUI(blobUrl) {
+  const wrap = document.getElementById('video-trim-ui');
+  const vidEl = document.getElementById('trim-preview-vid');
+  vidEl.src = blobUrl;
+  vidEl.addEventListener('loadedmetadata', () => {
+    const dur = vidEl.duration;
+    _vTrimDur = dur; _vTrimStart = 0; _vTrimEnd = dur;
+    const s = document.getElementById('trim-start');
+    const e = document.getElementById('trim-end');
+    s.max = Math.floor(dur); e.max = Math.floor(dur);
+    s.value = 0; e.value = Math.floor(dur);
+    onTrimChange();
+    wrap.style.display = 'block';
+  }, { once: true });
+}
+
+function onTrimChange() {
+  const s = parseInt(document.getElementById('trim-start').value);
+  let e = parseInt(document.getElementById('trim-end').value);
+  if (e <= s) { e = Math.min(s + 1, Math.floor(_vTrimDur)); document.getElementById('trim-end').value = e; }
+  _vTrimStart = s; _vTrimEnd = e;
+  document.getElementById('trim-start-lbl').textContent = fmtSec(s);
+  document.getElementById('trim-end-lbl').textContent = fmtSec(e);
+  const clipDur = e - s;
+  const isFull = s === 0 && e >= Math.floor(_vTrimDur);
+  document.getElementById('trim-info-text').textContent = isFull
+    ? 'Full video selected'
+    : `Clip: ${fmtSec(s)} → ${fmtSec(e)}  (${Math.round(clipDur)}s)`;
+  document.getElementById('trim-cost-badge').textContent = '$' + (clipDur * 0.01).toFixed(2);
+  const note = document.getElementById('trim-rec-note');
+  if (note) note.style.display = (!isFull && clipDur > 3) ? 'block' : 'none';
+  // Seek preview to start time
+  const vidEl = document.getElementById('trim-preview-vid');
+  if (vidEl && !vidEl.paused) return;
+  if (vidEl) vidEl.currentTime = s;
+}
+
+function hideVideoTrimUI() {
+  const wrap = document.getElementById('video-trim-ui');
+  const vidEl = document.getElementById('trim-preview-vid');
+  if (wrap) wrap.style.display = 'none';
+  if (vidEl) { vidEl.pause(); vidEl.src = ''; }
+  _vTrimDur = 0; _vTrimStart = 0; _vTrimEnd = null;
+}
+
+async function trimVideoIfNeeded(file) {
+  const isFull = _vTrimEnd === null || (_vTrimStart === 0 && _vTrimEnd >= Math.floor(_vTrimDur));
+  if (isFull) return file;
+  const duration = _vTrimEnd - _vTrimStart;
+  toast(`\u23FA Trimming ${Math.round(duration)}s clip\u2026 (plays in real time)`);
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const objUrl = URL.createObjectURL(file);
+    video.src = objUrl; video.muted = true; video.preload = 'auto';
+    video.addEventListener('loadedmetadata', () => { video.currentTime = _vTrimStart; }, { once: true });
+    video.addEventListener('seeked', () => {
+      const stream = video.captureStream(30);
+      const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' : 'video/webm';
+      const rec = new MediaRecorder(stream, { mimeType: mime });
+      const chunks = [];
+      rec.ondataavailable = ev => { if (ev.data.size > 0) chunks.push(ev.data); };
+      rec.onstop = () => {
+        video.pause(); URL.revokeObjectURL(objUrl);
+        resolve(new File([new Blob(chunks, {type: 'video/webm'})], 'clip.webm', {type: 'video/webm'}));
+      };
+      rec.start(200); video.play();
+      setTimeout(() => rec.stop(), duration * 1000 + 400);
+    }, { once: true });
+    video.addEventListener('error', () => { URL.revokeObjectURL(objUrl); reject(new Error('Trim failed')); });
+  });
 }
 
 function loadVideoDuration(file, dataUrl, infoId, costId, metaId, cb) {
@@ -1232,16 +1362,18 @@ async function uploadFileXHR(file, onPct, progressBarId) {
     const bar = document.getElementById(progressBarId + '-bar');
     if (wrap) { wrap.style.display = 'block'; if (bar) bar.style.width = '0%'; }
   }
-  const endpoints = [
-    'https://api.wavespeed.ai/api/v3/media/upload/binary',  // direct — fastest
-    PROXY + '/api/v3/media/upload/binary'                   // proxy fallback
-  ];
+  // If a previous upload was CORS-blocked, skip straight to proxy (saves ~3-5s retry overhead)
+  const useProxyDirect = !!sessionStorage.getItem('gs_use_proxy');
+  const endpoints = useProxyDirect
+    ? [PROXY + '/api/v3/media/upload/binary']
+    : ['https://api.wavespeed.ai/api/v3/media/upload/binary', PROXY + '/api/v3/media/upload/binary'];
   for (let i = 0; i < endpoints.length; i++) {
     try {
       return await _xhrUpload(endpoints[i], file, onPct, progressBarId);
     } catch(e) {
       if (e.isCorsBlock && i < endpoints.length - 1) {
-        // CORS blocked on direct — reset bar, try proxy
+        // CORS blocked on direct — remember for rest of session, reset bar, try proxy
+        sessionStorage.setItem('gs_use_proxy', '1');
         if (progressBarId) { const b = document.getElementById(progressBarId + '-bar'); if (b) b.style.width = '0%'; }
         continue;
       }
@@ -1355,16 +1487,27 @@ async function doVideoSwap() {
   setBtn('video', false, 'Swap Face'); // re-enable immediately
   const t0 = Date.now();
   const job = createJob('Video Swap');
-  const steps = jobSteps(job, [{id:'upload', label:'Uploading video'}, {id:'swap', label:'Processing face swap'}]);
-  markJobStep(job, steps, 'upload', 'active');
+  const hasTrim = _vTrimEnd !== null && !(_vTrimStart === 0 && _vTrimEnd >= Math.floor(_vTrimDur));
+  const stepDefs = hasTrim
+    ? [{id:'trim', label:`Trimming clip (${fmtSec(_vTrimStart)}→${fmtSec(_vTrimEnd)})`}, {id:'upload', label:'Uploading clip'}, {id:'swap', label:'Processing face swap'}]
+    : [{id:'upload', label:'Uploading video'}, {id:'swap', label:'Processing face swap'}];
+  const steps = jobSteps(job, stepDefs);
+  if (hasTrim) markJobStep(job, steps, 'trim', 'active');
+  else markJobStep(job, steps, 'upload', 'active');
   try {
-    // Upload — feed progress into the job card skeleton bar
-    const videoUrl = await uploadFileXHR(F['video-target'].file, pct => setJobUploadPct(job, pct), 'uprog');
+    // Trim if user selected a section, then upload
+    const fileToSwap = await trimVideoIfNeeded(F['video-target'].file);
+    if (job.cancelled) return;
+    if (hasTrim) { markJobStep(job, steps, 'trim', 'done'); markJobStep(job, steps, 'upload', 'active'); }
+    const videoUrl = await uploadFileXHR(fileToSwap, pct => setJobUploadPct(job, pct), 'uprog');
     if (job.cancelled) return;
     markJobStep(job, steps, 'upload', 'done');
     markJobStep(job, steps, 'swap', 'active');
     let estSecs = 60;
-    try { const v = document.createElement('video'); v.src = F['video-target'].dataUrl; await new Promise(r=>{v.onloadedmetadata=r;}); estSecs = Math.max(30, v.duration * 5 + 20); } catch(e){}
+    try {
+      const clipDur = hasTrim ? (_vTrimEnd - _vTrimStart) : _vTrimDur || 30;
+      estSecs = Math.max(30, clipDur * 5 + 20);
+    } catch(e){}
     startJobGhost(job, estSecs * 1000);
     const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
       video: videoUrl,
@@ -1375,8 +1518,8 @@ async function doVideoSwap() {
     const url = await poll(id, job, steps, 'swap');
     if (job.cancelled) return;
     stopJobGhost(job, true);
-    let cost = '?';
-    try { const v2 = document.createElement('video'); v2.src = F['video-target'].dataUrl; await new Promise(r=>{v2.onloadedmetadata=r;}); cost = '$'+(v2.duration*0.01).toFixed(2); } catch(e){}
+    const clipDurForCost = hasTrim ? (_vTrimEnd - _vTrimStart) : _vTrimDur;
+    const cost = clipDurForCost ? '$'+(clipDurForCost*0.01).toFixed(2) : '?';
     showJobResult(job, url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
