@@ -250,22 +250,62 @@ select:focus{border-color:var(--accent)}
 @media(max-width:640px){
   header{flex-wrap:wrap;padding:10px 14px 10px;gap:6px 10px}
   .header-center{order:10;width:100%;max-width:100%}
-  .btn-lock,.btn-topup{display:none!important}
+  .btn-lock,.btn-topup,.balance-pill{display:none!important}
   .balance-widget{margin-left:auto}
   .logo-text p{display:none}
 }
 
 /* ── Video Trim UI ─────────────────────────────────────── */
+#uz-video-target .uz-preview video{height:96px}
 .video-trim-wrap{margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.trim-preview-vid{width:100%;max-height:240px;display:block;background:#000}
-.trim-controls{padding:14px 16px 12px;display:flex;flex-direction:column;gap:10px}
-.trim-row{display:flex;align-items:center;gap:10px}
-.trim-row label{font-size:11px;color:var(--sub);width:34px;flex-shrink:0;text-transform:uppercase;letter-spacing:.4px}
-.trim-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
-.trim-time{font-size:12px;font-weight:700;color:var(--text);min-width:38px;text-align:right;font-variant-numeric:tabular-nums;font-family:monospace}
-.trim-info-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub);padding-top:4px;border-top:1px solid var(--border)}
+.trim-preview-vid{width:100%;max-height:300px;display:block;background:#000;cursor:pointer}
+.trim-controls{padding:14px 16px 12px;display:flex;flex-direction:column;gap:12px}
+.tl{position:relative;height:56px;border-radius:8px;background:#000;touch-action:none;user-select:none;cursor:pointer}
+.tl-strip{position:absolute;inset:0;width:100%;height:100%;border-radius:8px;display:block}
+.tl-dim{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.72);pointer-events:none}
+.tl-dim-l{left:0;border-radius:8px 0 0 8px}.tl-dim-r{right:0;border-radius:0 8px 8px 0}
+.tl-sel{position:absolute;top:0;bottom:0;border:2px solid var(--accent-l);border-radius:6px;box-shadow:0 0 0 1px rgba(0,0,0,.5),0 0 18px var(--accent-glow);cursor:grab}
+.tl-sel:active{cursor:grabbing}
+.tl-h{position:absolute;top:-2px;bottom:-2px;width:16px;background:var(--accent-l);cursor:ew-resize;display:flex;align-items:center;justify-content:center}
+.tl-h::after{content:'';width:2px;height:18px;border-radius:1px;background:rgba(255,255,255,.85)}
+.tl-h-l{left:-10px;border-radius:6px 0 0 6px}.tl-h-r{right:-10px;border-radius:0 6px 6px 0}
+.tl-play{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;border-radius:1px;pointer-events:none;box-shadow:0 0 6px rgba(255,255,255,.6)}
+.trim-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.trim-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border-h);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;transition:all .15s}
+.trim-btn:hover{border-color:var(--accent);background:rgba(124,58,237,.1)}
+.trim-time{font-size:12px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;font-family:monospace}
+.trim-info-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub);padding-top:8px;border-top:1px solid var(--border)}
 .trim-badge{background:rgba(124,58,237,.18);border:1px solid rgba(168,85,247,.3);color:var(--accent-l);border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700}
-.trim-recording-note{font-size:10px;color:var(--sub);text-align:center;padding:4px 0 0;display:none}
+.trim-recording-note{font-size:10px;color:var(--sub);text-align:center;display:none}
+
+/* ── Tokens ────────────────────────────────────────────── */
+.tok-pill{display:flex;align-items:center;gap:6px;background:rgba(124,58,237,.12);border:1px solid rgba(168,85,247,.35);border-radius:10px;padding:7px 13px;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .2s;color:var(--text)}
+.tok-pill:hover{background:rgba(124,58,237,.2)}
+.tok-pill b{font-size:13px;color:var(--accent-l);font-variant-numeric:tabular-nums}
+.tok-pill.low{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.1)}
+.tok-pill.low b{color:var(--danger)}
+.tok-cost{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--accent-l);background:rgba(124,58,237,.12);border:1px solid rgba(168,85,247,.25);border-radius:6px;padding:2px 8px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;max-width:420px;max-height:calc(100vh - 32px);overflow:auto;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.modal h2{font-size:17px;letter-spacing:-.3px;display:flex;justify-content:space-between;align-items:center}
+.modal-x{background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer}
+.tok-big{font-size:34px;font-weight:800;color:var(--accent-l);font-variant-numeric:tabular-nums;line-height:1}
+.tok-big small{font-size:12px;font-weight:500;color:var(--sub);margin-left:6px}
+.tok-packs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tok-pack{background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px 4px;cursor:pointer;color:var(--text);text-align:center;transition:all .15s}
+.tok-pack b{display:block;font-size:15px}.tok-pack span{font-size:10px;color:var(--sub)}
+.tok-pack.active,.tok-pack:hover{border-color:var(--accent);background:rgba(124,58,237,.12)}
+.modal input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;padding:10px 14px;outline:none;width:100%}
+.modal input:focus{border-color:var(--accent)}
+.modal-row{display:flex;gap:8px}
+.tok-prices{font-size:11px;color:var(--sub);display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.tok-prices b{color:var(--text);text-align:right}
+.tok-ledger{display:flex;flex-direction:column;gap:2px;font-size:11px;max-height:160px;overflow:auto}
+.tok-ledger div{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);color:var(--sub)}
+.tok-ledger .plus{color:var(--success);font-weight:700}.tok-ledger .minus{color:var(--text);font-weight:700}
+.modal-sec{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--sub)}
+.modal-link{font-size:11px;color:var(--sub);text-align:center}.modal-link a{color:var(--accent-l)}
 
 /* LOGIN OVERLAY */
 .login-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
@@ -330,15 +370,16 @@ select:focus{border-color:var(--accent)}
   </div>
   <!-- Balance + Top-up -->
   <div class="balance-widget">
-    <div class="balance-pill loading" id="bal-pill" title="WaveSpeed balance — click to top up" onclick="window.open('https://wavespeed.ai/billing','_blank')" style="cursor:pointer">
+    <div class="balance-pill loading" id="bal-pill" title="Real WaveSpeed balance — click to top up at WaveSpeed" onclick="window.open('https://wavespeed.ai/billing','_blank')" style="cursor:pointer">
       <div class="bal-spin"></div>
       <span class="bal-icon">&#128176;</span>
       <span class="bal-amt" id="bal-amt">—</span>
-      <span class="bal-lbl">credits</span>
+      <span class="bal-lbl">WaveSpeed</span>
     </div>
-    <a class="btn-topup" href="https://wavespeed.ai/billing" target="_blank" rel="noopener">
-      + Top up
-    </a>
+    <button class="tok-pill" id="tok-pill" onclick="openTokens()" title="Your tokens — click to top up">
+      &#129689; <b id="tok-amt">0</b> tokens
+    </button>
+    <button class="btn-topup" onclick="openTokens()">+ Top up</button>
     <button class="btn-lock" id="btn-lock" onclick="doLogout()">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Lock
@@ -392,7 +433,7 @@ select:focus{border-color:var(--accent)}
         <svg id="btn-compose-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3 1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/></svg>
         <span id="btn-compose-lbl">Build Image</span>
       </button>
-      <span class="cost-note">Seedream 4.5 &middot; $0.04 per image</span>
+      <span class="tok-cost">&#129689; 4 tokens</span><span class="cost-note">Seedream 4.5</span>
     </div>
   </div>
 
@@ -439,7 +480,7 @@ select:focus{border-color:var(--accent)}
         <svg id="btn-photo-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         <span id="btn-photo-lbl">Swap Face</span>
       </button>
-      <span class="cost-note">~$0.012 per image</span>
+      <span class="tok-cost">&#129689; 2 tokens</span>
     </div>
   </div>
 
@@ -461,23 +502,28 @@ select:focus{border-color:var(--accent)}
       </div>
       <!-- Video preview + trim selector -->
       <div id="video-trim-ui" style="display:none" class="video-trim-wrap">
-        <video id="trim-preview-vid" class="trim-preview-vid" controls preload="metadata"></video>
+        <video id="trim-preview-vid" class="trim-preview-vid" playsinline preload="auto" onclick="togglePreview()"></video>
         <div class="trim-controls">
-          <div class="trim-row">
-            <label>Start</label>
-            <input type="range" id="trim-start" min="0" step="1" value="0" oninput="onTrimChange()">
-            <span class="trim-time" id="trim-start-lbl">0:00</span>
+          <div class="tl" id="tl">
+            <canvas class="tl-strip" id="tl-strip"></canvas>
+            <div class="tl-dim tl-dim-l" id="tl-dim-l"></div>
+            <div class="tl-dim tl-dim-r" id="tl-dim-r"></div>
+            <div class="tl-sel" id="tl-sel" data-drag="move">
+              <div class="tl-h tl-h-l" data-drag="start"></div>
+              <div class="tl-h tl-h-r" data-drag="end"></div>
+            </div>
+            <div class="tl-play" id="tl-play"></div>
           </div>
-          <div class="trim-row">
-            <label>End</label>
-            <input type="range" id="trim-end" min="0" step="1" value="0" oninput="onTrimChange()">
-            <span class="trim-time" id="trim-end-lbl">0:00</span>
+          <div class="trim-bar">
+            <button class="trim-btn" id="trim-play-btn" onclick="togglePreview()">&#9654; Play selection</button>
+            <span class="trim-time"><span id="trim-start-lbl">0:00.0</span> &rarr; <span id="trim-end-lbl">0:00.0</span></span>
+            <button class="trim-btn" style="margin-left:auto" onclick="setTrim(0,_vTrimDur)">Full video</button>
           </div>
           <div class="trim-info-row">
-            <span id="trim-info-text" style="color:var(--sub)">Full video</span>
-            <span class="trim-badge" id="trim-cost-badge">—</span>
+            <span id="trim-info-text">Full video</span>
+            <span class="trim-badge" id="trim-cost-badge">&mdash;</span>
           </div>
-          <div class="trim-recording-note" id="trim-rec-note">⏺ Trimming records the clip in real time — takes as long as the selected section</div>
+          <div class="trim-recording-note" id="trim-rec-note">&#9210; The selected part is cut in your browser before upload. This takes as long as the clip itself.</div>
         </div>
       </div>
       <div class="uprog" id="uprog"><div class="uprog-bar" id="uprog-bar"></div></div>
@@ -509,13 +555,43 @@ select:focus{border-color:var(--accent)}
         <svg id="btn-video-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
         <span id="btn-video-lbl">Swap Face</span>
       </button>
-      <span class="cost-note">$0.01 / second of video</span>
+      <span class="tok-cost" id="video-tok-cost">&#129689; 1 token / second</span>
     </div>
   </div>
 
   <!-- JOBS — parallel swap queue, each swap gets its own card -->
   <div class="jobs-container" id="jobs-container"></div>
 </main>
+
+<!-- TOKEN TOP-UP MODAL -->
+<div class="modal-bg" id="tok-modal" onclick="if(event.target===this)closeTokens()">
+  <div class="modal">
+    <h2>Tokens <button class="modal-x" onclick="closeTokens()">&times;</button></h2>
+    <div class="tok-big" id="tok-modal-amt">0<small>tokens &middot; $0.00</small></div>
+    <div>
+      <div class="modal-sec" style="margin-bottom:8px">Top up</div>
+      <div class="tok-packs" id="tok-packs"></div>
+    </div>
+    <div class="modal-row">
+      <input type="number" id="tok-custom" min="1" step="1" placeholder="Custom amount" oninput="pickPack(null)">
+      <input type="password" id="tok-pin" placeholder="PIN" autocomplete="off" onkeydown="if(event.key==='Enter')doTopUp()">
+    </div>
+    <button class="btn-swap" style="justify-content:center" onclick="doTopUp()">Add tokens</button>
+    <div>
+      <div class="modal-sec" style="margin-bottom:8px">Prices (1 token = $0.01)</div>
+      <div class="tok-prices">
+        <span>Image Builder (Seedream 4.5)</span><b>4 / image</b>
+        <span>Photo Swap</span><b>2 / image</b>
+        <span>Video Swap</span><b>1 / second (min. 3)</b>
+      </div>
+    </div>
+    <div>
+      <div class="modal-sec" style="margin-bottom:8px">History</div>
+      <div class="tok-ledger" id="tok-ledger"></div>
+    </div>
+    <div class="modal-link" id="tok-ws-note">Tokens are an internal budget. Real credits: <a href="https://wavespeed.ai/billing" target="_blank" rel="noopener">WaveSpeed billing</a></div>
+  </div>
+</div>
 
 <div class="toast" id="toast">
   <span class="toast-x" onclick="this.parentElement.classList.remove('show')">&times;</span>
@@ -648,6 +724,113 @@ const MAX_REFS = 10;
 let wsKey = localStorage.getItem('wsKey') || '';
 function apiKey() { return wsKey; }
 
+// ─── Tokens (internal budget, this device only) ─────────────────────────────
+// 1 token = $0.01 of WaveSpeed cost, rounded up.
+const TOK_KEY = 'gs_tokens', LEDGER_KEY = 'gs_ledger', SPEED_KEY = 'gs_speed';
+const TOKEN_COST = { compose: 4, photo: 2 };
+const TOKEN_PACKS = [100, 500, 1000, 2500];
+let wsBalance = null; // last known real WaveSpeed balance in $
+let selectedPack = 500;
+
+function videoTokens(sec) { return Math.max(3, Math.ceil((sec || 0) - 0.001)); }
+function getTokens() { return parseInt(localStorage.getItem(TOK_KEY) || '0', 10) || 0; }
+function getLedger() { try { return JSON.parse(localStorage.getItem(LEDGER_KEY)) || []; } catch (e) { return []; } }
+
+function _changeTokens(delta, label) {
+  localStorage.setItem(TOK_KEY, String(getTokens() + delta));
+  const led = getLedger();
+  led.unshift({ t: Date.now(), d: delta, l: label });
+  localStorage.setItem(LEDGER_KEY, JSON.stringify(led.slice(0, 50)));
+  renderTokens();
+}
+
+// Reserves tokens when a job starts. Returns false (and opens top-up) if not enough.
+function spendTokens(job, n, label) {
+  const have = getTokens();
+  if (have < n) {
+    toast(`\u{1FA99} Not enough tokens: need ${n}, you have ${have}.`);
+    openTokens();
+    return false;
+  }
+  _changeTokens(-n, label);
+  if (job) { job.tokens = n; job.tokenLabel = label; }
+  return true;
+}
+
+// Gives reserved tokens back (failed job, or cancelled before WaveSpeed got it)
+function refundJob(job) {
+  if (!job.tokens || job.settled) return;
+  job.settled = true;
+  _changeTokens(job.tokens, 'Refund · ' + job.tokenLabel);
+}
+
+function renderTokens() {
+  const n = getTokens();
+  document.getElementById('tok-amt').textContent = n.toLocaleString('de-CH');
+  document.getElementById('tok-pill').classList.toggle('low', n < 10);
+  const big = document.getElementById('tok-modal-amt');
+  if (big) big.innerHTML = `${n.toLocaleString('de-CH')}<small>tokens &middot; $${(n * 0.01).toFixed(2)}</small>`;
+  const note = document.getElementById('tok-ws-note');
+  if (note) {
+    const over = wsBalance !== null && n * 0.01 > wsBalance + 0.001;
+    note.innerHTML = over
+      ? `<span style="color:var(--warn)">Heads up: tokens are worth $${(n * 0.01).toFixed(2)}, but WaveSpeed only has $${wsBalance.toFixed(2)}.</span> <a href="https://wavespeed.ai/billing" target="_blank" rel="noopener">Top up WaveSpeed</a>`
+      : 'Tokens are an internal budget. Real credits: <a href="https://wavespeed.ai/billing" target="_blank" rel="noopener">WaveSpeed billing</a>';
+  }
+  const led = document.getElementById('tok-ledger');
+  if (led) {
+    const rows = getLedger().slice(0, 20);
+    led.innerHTML = rows.length ? rows.map(r => {
+      const d = new Date(r.t);
+      const when = d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+      return `<div><span>${when} &middot; ${r.l}</span><span class="${r.d > 0 ? 'plus' : 'minus'}">${r.d > 0 ? '+' : ''}${r.d}</span></div>`;
+    }).join('') : '<div><span>No activity yet</span></div>';
+  }
+}
+
+function openTokens() {
+  document.getElementById('tok-packs').innerHTML = TOKEN_PACKS.map(n =>
+    `<button class="tok-pack${n === selectedPack ? ' active' : ''}" data-n="${n}" onclick="pickPack(${n})"><b>${n}</b><span>$${(n * 0.01).toFixed(0)}</span></button>`).join('');
+  document.getElementById('tok-custom').value = '';
+  document.getElementById('tok-pin').value = '';
+  renderTokens();
+  document.getElementById('tok-modal').classList.add('show');
+  setTimeout(() => document.getElementById('tok-pin').focus(), 60);
+}
+function closeTokens() { document.getElementById('tok-modal').classList.remove('show'); }
+
+function pickPack(n) {
+  if (n !== null) { selectedPack = n; document.getElementById('tok-custom').value = ''; }
+  else selectedPack = null;
+  document.querySelectorAll('.tok-pack').forEach(b => b.classList.toggle('active', +b.dataset.n === selectedPack));
+}
+
+function doTopUp() {
+  const custom = parseInt(document.getElementById('tok-custom').value, 10);
+  const n = custom > 0 ? custom : selectedPack;
+  if (!n) { toast('Pick a package or enter an amount'); return; }
+  const pin = document.getElementById('tok-pin');
+  if (pin.value !== AUTH_PASS) { toast('\u{1F512} Wrong PIN'); pin.value = ''; pin.focus(); return; }
+  _changeTokens(n, 'Top up');
+  pin.value = '';
+  toast(`✅ +${n} tokens added`);
+}
+
+// ─── Learned processing speed (makes the ghost progress bar honest) ─────────
+function getSpeed() { try { return JSON.parse(localStorage.getItem(SPEED_KEY)) || {}; } catch (e) { return {}; } }
+// Video: seconds of processing per second of clip. Others: seconds per job.
+function estimateMs(kind, clipSec) {
+  const sp = getSpeed();
+  if (kind === 'video') return Math.max(30, 20 + (clipSec || 10) * (sp.video ?? 6)) * 1000;
+  return (sp[kind] ?? (kind === 'compose' ? 35 : 20)) * 1000;
+}
+function recordSpeed(kind, ms, clipSec) {
+  const sp = getSpeed();
+  const v = kind === 'video' ? Math.max(0.5, (ms / 1000 - 20) / Math.max(1, clipSec)) : ms / 1000;
+  sp[kind] = sp[kind] == null ? v : sp[kind] * 0.6 + v * 0.4; // smooth over recent jobs
+  localStorage.setItem(SPEED_KEY, JSON.stringify(sp));
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 const keyEl = document.getElementById('apiKey');
 keyEl.value = wsKey;
@@ -661,6 +844,8 @@ dot();
 initDrop();
 renderRefs();
 initRefDrop();
+initTimeline();
+renderTokens();
 checkAuth();
 
 function dot() {
@@ -687,6 +872,7 @@ async function fetchBalance() {
     const bal = d?.data?.balance ?? d?.balance;
     if (bal === undefined || bal === null) throw new Error('no balance field');
     const n = parseFloat(bal);
+    wsBalance = n; renderTokens();
     amt.textContent = '$' + n.toFixed(2);
     if (n >= 2)      pill.className = 'balance-pill ok';
     else if (n >= 0.5) pill.className = 'balance-pill warn';
@@ -715,7 +901,7 @@ let jobSeq = 0;
 
 function createJob(title) {
   const jid = 'j' + (++jobSeq);
-  const job = { id: jid, title, ghostTimer: null, ghostStart: 0, ghostEstMs: 30000, cancelled: false };
+  const job = { id: jid, title, ghostTimer: null, ghostStart: 0, ghostEstMs: 30000, cancelled: false, t0: Date.now() };
   jobs.set(jid, job);
   _renderJobCard(job);
   return job;
@@ -782,45 +968,56 @@ function markJobStep(job, map, id, state) {
 }
 
 // Show upload progress on job card (0–1) — caps bar at 85% to leave room for processing
-function setJobUploadPct(job, pct) {
+// One continuous bar per job. Each phase owns a slice of it (from..to, in %).
+function setJobBar(job, pct, text) {
   const fill  = document.getElementById(job.id + '-fill');
   const pctEl = document.getElementById(job.id + '-pct');
   const eta   = document.getElementById(job.id + '-eta');
-  if (fill)  { fill.style.transition = 'width .2s'; fill.style.width = (pct * 85) + '%'; }
-  if (pctEl) pctEl.textContent = Math.round(pct * 85) + '%';
-  if (eta)   eta.textContent = 'Uploading\u2026 ' + Math.round(pct * 100) + '%';
+  if (fill)  { fill.style.transition = 'width .25s'; fill.style.width = pct + '%'; }
+  if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+  if (eta && text) eta.textContent = text;
 }
 
-function startJobGhost(job, estimatedMs) {
+function setJobUploadPct(job, frac, from = 0, to = 30, label = 'Uploading') {
+  setJobBar(job, from + frac * (to - from), `${label}… ${Math.round(frac * 100)}%`);
+}
+
+function fmtDur(sec) {
+  sec = Math.max(0, Math.round(sec));
+  return sec >= 60 ? `${Math.floor(sec / 60)}m ${String(sec % 60).padStart(2, '0')}s` : `${sec}s`;
+}
+
+// Ghost progress: eases from `from`% towards 97% so it reaches ~90% of the way
+// at the estimated time, then crawls. Estimate is learned from past jobs.
+function startJobGhost(job, estimatedMs, from = 2) {
   job.ghostEstMs = estimatedMs || 30000;
   job.ghostStart = Date.now();
+  job.ghostFrom = from;
   const fill  = document.getElementById(job.id + '-fill');
   const pctEl = document.getElementById(job.id + '-pct');
-  if (fill)  { fill.style.transition = 'none'; fill.style.width = '2%'; fill.classList.remove('done'); }
-  if (pctEl) { pctEl.textContent = '2%'; pctEl.classList.remove('done'); }
+  if (fill)  fill.classList.remove('done');
+  if (pctEl) pctEl.classList.remove('done');
+  clearTimeout(job.ghostTimer);
   _tickJobGhost(job);
 }
 
 function _tickJobGhost(job) {
   if (job.cancelled) return;
   const elapsed = Date.now() - job.ghostStart;
-  const pct = 88 * (1 - Math.exp(-2.8 * (elapsed / job.ghostEstMs)));
-  const clamped = Math.min(88, pct);
+  const from = job.ghostFrom ?? 2;
+  const pct = from + (97 - from) * (1 - Math.exp(-2.3 * (elapsed / job.ghostEstMs)));
   const fill  = document.getElementById(job.id + '-fill');
   const pctEl = document.getElementById(job.id + '-pct');
-  if (fill)  { fill.style.transition = 'width .7s ease-out'; fill.style.width = clamped + '%'; }
-  if (pctEl) pctEl.textContent = Math.round(clamped) + '%';
-  const remaining = Math.max(0, Math.round((job.ghostEstMs - elapsed) / 1000));
+  if (fill)  { fill.style.transition = 'width .7s ease-out'; fill.style.width = pct + '%'; }
+  if (pctEl) pctEl.textContent = Math.round(pct) + '%';
   const eta = document.getElementById(job.id + '-eta');
   if (eta) {
-    if (remaining > 60) {
-      const m = Math.floor(remaining / 60), s = remaining % 60;
-      eta.textContent = `~${m}m ${s < 10 ? '0'+s : s}s remaining`;
-    } else if (remaining > 3) {
-      eta.textContent = `~${remaining}s remaining`;
-    } else {
-      eta.textContent = 'Almost done\u2026';
-    }
+    const remaining = (job.ghostEstMs - elapsed) / 1000;
+    const status = job.status === 'queued' ? 'In queue · ' : '';
+    const took = fmtDur((Date.now() - (job.t0 || job.ghostStart)) / 1000) + ' elapsed';
+    eta.textContent = remaining > 3
+      ? `${status}~${fmtDur(remaining)} left · ${took}`
+      : `${status}Taking a bit longer than usual · ${took}`;
   }
   job.ghostTimer = setTimeout(() => _tickJobGhost(job), 700);
 }
@@ -863,7 +1060,7 @@ function showJobResult(job, url, isVid, time, cost) {
     if (med) { med.style.display = 'block'; med.innerHTML = isVid ? `<video src="${url}" controls autoplay loop muted playsinline></video>` : `<img src="${url}" alt="result">`; }
     if (dl)      { dl.onclick = () => downloadResult(url, isVid ? 'grindspace.mp4' : 'grindspace.jpg'); }
     if (actions) actions.style.display = 'flex';
-    if (meta)    meta.innerHTML = `<span>&#9201; ${time}</span><span>&#128176; ${cost}</span>`;
+    if (meta)    meta.innerHTML = `<span>&#9201; ${time}</span><span>&#129689; ${cost}</span>`;
   }, 1000);
 }
 
@@ -881,8 +1078,10 @@ function jobError(job, msg) {
   if (actions) actions.style.display = 'flex';
   if (dl)     dl.style.display = 'none';
   const isAuth = /unauthorized|401|403/i.test(msg);
-  toast('\u274C ' + msg + (isAuth ? ' \u2014 no credits charged.' : ''));
-  if (meta && isAuth) meta.innerHTML = '<span style="color:var(--sub);font-size:11px">No credits were charged.</span>';
+  const refunded = job.tokens && !job.settled;
+  refundJob(job);
+  toast('\u274C ' + msg + (refunded ? ` \u2014 ${job.tokens} tokens refunded.` : ''));
+  if (meta && (isAuth || refunded)) meta.innerHTML = `<span style="color:var(--sub);font-size:11px">${refunded ? job.tokens + ' tokens refunded. ' : ''}No credits were charged.</span>`;
 }
 
 function cancelJob(jid) {
@@ -895,6 +1094,8 @@ function cancelJob(jid) {
   const actions = document.getElementById(jid + '-actions');
   const dl     = document.getElementById(jid + '-dl');
   if (chip)   { chip.textContent = 'Cancelled'; chip.className = 'chip'; }
+  // Before WaveSpeed has the job nothing is billed, so the tokens come back
+  if (!job.submitted) { if (job.tokens && !job.settled) toast(`${job.tokens} tokens refunded`); refundJob(job); }
   if (skel)   skel.classList.remove('active');
   if (cancel) cancel.style.display = 'none';
   if (actions) { actions.style.display = 'flex'; if (dl) dl.style.display = 'none'; }
@@ -970,84 +1171,225 @@ function removeFile(key, e) {
   checkBtns();
 }
 
-// ─── Video Trim ───────────────────────────────────────────────────────────────
+// ─── Video Trim (timeline + looped preview) ──────────────────────────────────
 let _vTrimDur = 0, _vTrimStart = 0, _vTrimEnd = null;
+const MIN_CLIP = 1; // seconds
+let _stripToken = null;
 
 function fmtSec(s) {
   const m = Math.floor(s / 60), sec = Math.floor(s % 60);
   return m + ':' + String(sec).padStart(2, '0');
 }
+function fmtSecT(s) { return fmtSec(s) + '.' + Math.floor((s % 1) * 10); }
+function isFullClip() { return _vTrimEnd === null || (_vTrimStart <= 0.05 && _vTrimEnd >= _vTrimDur - 0.05); }
+function clipSeconds() { return isFullClip() ? _vTrimDur : _vTrimEnd - _vTrimStart; }
 
 function initVideoTrimUI(blobUrl) {
   const wrap = document.getElementById('video-trim-ui');
   const vidEl = document.getElementById('trim-preview-vid');
   vidEl.src = blobUrl;
-  vidEl.addEventListener('loadedmetadata', () => {
-    const dur = vidEl.duration;
-    _vTrimDur = dur; _vTrimStart = 0; _vTrimEnd = dur;
-    const s = document.getElementById('trim-start');
-    const e = document.getElementById('trim-end');
-    s.max = Math.floor(dur); e.max = Math.floor(dur);
-    s.value = 0; e.value = Math.floor(dur);
-    onTrimChange();
+  vidEl.addEventListener('loadedmetadata', async () => {
+    if (!isFinite(vidEl.duration)) {
+      await new Promise(res => { vidEl.addEventListener('durationchange', res, { once: true }); vidEl.currentTime = 1e7; setTimeout(res, 3000); });
+      vidEl.currentTime = 0;
+    }
+    _vTrimDur = vidEl.duration;
     wrap.style.display = 'block';
+    setTrim(0, _vTrimDur);
+    buildFilmstrip(blobUrl);
   }, { once: true });
 }
 
-function onTrimChange() {
-  const s = parseInt(document.getElementById('trim-start').value);
-  let e = parseInt(document.getElementById('trim-end').value);
-  if (e <= s) { e = Math.min(s + 1, Math.floor(_vTrimDur)); document.getElementById('trim-end').value = e; }
+// edge: 's' or 'e' seeks the preview to that edge so you see the exact cut frame
+function setTrim(s, e, edge) {
+  if (!_vTrimDur) return;
+  const minLen = Math.min(MIN_CLIP, _vTrimDur);
+  s = Math.max(0, Math.min(s, _vTrimDur - minLen));
+  e = Math.min(_vTrimDur, Math.max(e, s + minLen));
   _vTrimStart = s; _vTrimEnd = e;
-  document.getElementById('trim-start-lbl').textContent = fmtSec(s);
-  document.getElementById('trim-end-lbl').textContent = fmtSec(e);
-  const clipDur = e - s;
-  const isFull = s === 0 && e >= Math.floor(_vTrimDur);
-  document.getElementById('trim-info-text').textContent = isFull
-    ? 'Full video selected'
-    : `Clip: ${fmtSec(s)} → ${fmtSec(e)}  (${Math.round(clipDur)}s)`;
-  document.getElementById('trim-cost-badge').textContent = '$' + (clipDur * 0.01).toFixed(2);
-  const note = document.getElementById('trim-rec-note');
-  if (note) note.style.display = (!isFull && clipDur > 3) ? 'block' : 'none';
-  // Seek preview to start time
+  const pct = t => (t / _vTrimDur * 100) + '%';
+  const sel = document.getElementById('tl-sel');
+  sel.style.left = pct(s); sel.style.width = ((e - s) / _vTrimDur * 100) + '%';
+  document.getElementById('tl-dim-l').style.width = pct(s);
+  document.getElementById('tl-dim-r').style.width = ((_vTrimDur - e) / _vTrimDur * 100) + '%';
+  document.getElementById('trim-start-lbl').textContent = fmtSecT(s);
+  document.getElementById('trim-end-lbl').textContent = fmtSecT(e);
+  const full = isFullClip();
+  const len = clipSeconds();
+  document.getElementById('trim-info-text').textContent = full
+    ? `Full video (${len.toFixed(1)}s)`
+    : `Selected ${len.toFixed(1)}s of ${_vTrimDur.toFixed(1)}s`;
+  document.getElementById('trim-cost-badge').textContent = `\u{1FA99} ${videoTokens(len)} tokens`;
+  document.getElementById('trim-rec-note').style.display = full ? 'none' : 'block';
   const vidEl = document.getElementById('trim-preview-vid');
-  if (vidEl && !vidEl.paused) return;
-  if (vidEl) vidEl.currentTime = s;
+  if (edge && vidEl.paused) vidEl.currentTime = edge === 'e' ? Math.max(s, e - 0.05) : s;
+  updPlayhead();
+}
+
+function timeAt(ev) {
+  const r = document.getElementById('tl').getBoundingClientRect();
+  return Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * _vTrimDur;
+}
+
+function initTimeline() {
+  const tl = document.getElementById('tl');
+  const vidEl = document.getElementById('trim-preview-vid');
+  let drag = null;
+  tl.addEventListener('pointerdown', ev => {
+    if (!_vTrimDur) return;
+    ev.preventDefault();
+    tl.setPointerCapture(ev.pointerId);
+    if (!vidEl.paused) vidEl.pause();
+    const t = timeAt(ev);
+    drag = { mode: ev.target.dataset.drag || 'edge', t0: t, s0: _vTrimStart, e0: _vTrimEnd };
+    if (drag.mode === 'edge') { // click outside the selection: pull the nearest edge there
+      drag.mode = Math.abs(t - _vTrimStart) < Math.abs(t - _vTrimEnd) ? 'start' : 'end';
+      onMove(ev);
+    }
+  });
+  const onMove = ev => {
+    if (!drag) return;
+    const t = timeAt(ev);
+    if (drag.mode === 'start') setTrim(Math.min(t, _vTrimEnd - MIN_CLIP), _vTrimEnd, 's');
+    else if (drag.mode === 'end') setTrim(_vTrimStart, Math.max(t, _vTrimStart + MIN_CLIP), 'e');
+    else {
+      const len = drag.e0 - drag.s0;
+      const ns = Math.max(0, Math.min(_vTrimDur - len, drag.s0 + t - drag.t0));
+      setTrim(ns, ns + len, 's');
+    }
+  };
+  tl.addEventListener('pointermove', onMove);
+  const end = () => { drag = null; };
+  tl.addEventListener('pointerup', end);
+  tl.addEventListener('pointercancel', end);
+
+  // Looped preview of the selection
+  let raf = null;
+  const loop = () => {
+    if (_vTrimEnd !== null && vidEl.currentTime >= _vTrimEnd) vidEl.currentTime = _vTrimStart;
+    updPlayhead();
+    raf = requestAnimationFrame(loop);
+  };
+  vidEl.addEventListener('play', () => { document.getElementById('trim-play-btn').innerHTML = '&#10074;&#10074; Pause'; cancelAnimationFrame(raf); loop(); });
+  vidEl.addEventListener('pause', () => { document.getElementById('trim-play-btn').innerHTML = '&#9654; Play selection'; cancelAnimationFrame(raf); updPlayhead(); });
+  vidEl.addEventListener('seeked', updPlayhead);
+}
+
+function togglePreview() {
+  const v = document.getElementById('trim-preview-vid');
+  if (!v.src || !_vTrimDur) return;
+  if (v.paused) {
+    if (v.currentTime < _vTrimStart || v.currentTime >= _vTrimEnd - 0.05) v.currentTime = _vTrimStart;
+    v.play().catch(() => {});
+  } else v.pause();
+}
+
+function updPlayhead() {
+  const v = document.getElementById('trim-preview-vid');
+  const ph = document.getElementById('tl-play');
+  if (!_vTrimDur || !ph) return;
+  ph.style.left = (v.currentTime / _vTrimDur * 100) + '%';
+}
+
+// Thumbnail filmstrip behind the timeline
+async function buildFilmstrip(url) {
+  const token = _stripToken = {};
+  const cv = document.getElementById('tl-strip');
+  const r = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cv.width, cv.height);
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+  const seek = t => new Promise(res => {
+    const done = () => { clearTimeout(to); res(); };
+    const to = setTimeout(done, 2500);
+    v.addEventListener('seeked', done, { once: true });
+    v.currentTime = t;
+  });
+  await new Promise(res => { v.addEventListener('loadeddata', res, { once: true }); setTimeout(res, 4000); });
+  const n = Math.max(4, Math.round(r.width / 56));
+  const cw = cv.width / n, ch = cv.height;
+  for (let i = 0; i < n; i++) {
+    if (token !== _stripToken) return;
+    await seek(Math.min(_vTrimDur - 0.05, (i + 0.5) / n * _vTrimDur));
+    if (!v.videoWidth) continue;
+    const scale = Math.max(cw / v.videoWidth, ch / v.videoHeight);
+    const sw = cw / scale, sh = ch / scale;
+    ctx.drawImage(v, (v.videoWidth - sw) / 2, (v.videoHeight - sh) / 2, sw, sh, i * cw, 0, Math.ceil(cw), ch);
+  }
+  v.removeAttribute('src'); v.load();
 }
 
 function hideVideoTrimUI() {
+  _stripToken = null;
   const wrap = document.getElementById('video-trim-ui');
   const vidEl = document.getElementById('trim-preview-vid');
   if (wrap) wrap.style.display = 'none';
-  if (vidEl) { vidEl.pause(); vidEl.src = ''; }
+  if (vidEl) { vidEl.pause(); vidEl.removeAttribute('src'); vidEl.load(); }
   _vTrimDur = 0; _vTrimStart = 0; _vTrimEnd = null;
 }
 
-async function trimVideoIfNeeded(file) {
-  const isFull = _vTrimEnd === null || (_vTrimStart === 0 && _vTrimEnd >= Math.floor(_vTrimDur));
-  if (isFull) return file;
-  const duration = _vTrimEnd - _vTrimStart;
-  toast(`\u23FA Trimming ${Math.round(duration)}s clip\u2026 (plays in real time)`);
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const objUrl = URL.createObjectURL(file);
-    video.src = objUrl; video.muted = true; video.preload = 'auto';
-    video.addEventListener('loadedmetadata', () => { video.currentTime = _vTrimStart; }, { once: true });
-    video.addEventListener('seeked', () => {
-      const stream = video.captureStream(30);
-      const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' : 'video/webm';
-      const rec = new MediaRecorder(stream, { mimeType: mime });
-      const chunks = [];
-      rec.ondataavailable = ev => { if (ev.data.size > 0) chunks.push(ev.data); };
-      rec.onstop = () => {
-        video.pause(); URL.revokeObjectURL(objUrl);
-        resolve(new File([new Blob(chunks, {type: 'video/webm'})], 'clip.webm', {type: 'video/webm'}));
-      };
-      rec.start(200); video.play();
-      setTimeout(() => rec.stop(), duration * 1000 + 400);
-    }, { once: true });
-    video.addEventListener('error', () => { URL.revokeObjectURL(objUrl); reject(new Error('Trim failed')); });
-  });
+// Cuts the selected range in the browser (canvas + WebAudio, so audio is kept
+// and it works in Safari too). Runs in real time. onPct gets 0..1.
+async function trimVideoIfNeeded(file, onPct, job) {
+  if (isFullClip()) return file;
+  const start = _vTrimStart, end = _vTrimEnd, duration = end - start;
+  const objUrl = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.src = objUrl; video.playsInline = true; video.preload = 'auto';
+  try {
+    await new Promise((res, rej) => {
+      video.addEventListener('loadedmetadata', res, { once: true });
+      video.addEventListener('error', () => rej(new Error('Could not read video for trimming')), { once: true });
+    });
+    const long = Math.max(video.videoWidth, video.videoHeight);
+    const k = long > 1920 ? 1920 / long : 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(video.videoWidth * k / 2) * 2;
+    canvas.height = Math.round(video.videoHeight * k / 2) * 2;
+    const ctx = canvas.getContext('2d');
+    const stream = canvas.captureStream(30);
+    let actx = null;
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = actx.createMediaElementSource(video);
+      const dest = actx.createMediaStreamDestination();
+      src.connect(dest); // not connected to speakers: records sound silently
+      dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+      await actx.resume();
+    } catch (e) { video.muted = true; }
+    await new Promise(res => { video.addEventListener('seeked', res, { once: true }); video.currentTime = start; });
+    const mime = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+      .find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+    if (!mime) throw new Error('This browser cannot cut video — select the full video instead');
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 10_000_000 });
+    const chunks = [];
+    rec.ondataavailable = ev => { if (ev.data.size > 0) chunks.push(ev.data); };
+    const stopped = new Promise(res => { rec.onstop = res; });
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    rec.start(250);
+    rec.pause(); // don't record the dead time until playback really starts
+    try { await video.play(); } catch (e) { video.muted = true; await video.play(); }
+    rec.resume();
+    // Fixed-rate timer instead of rAF/frame callbacks: those stall for
+    // off-screen video elements in some browsers.
+    await new Promise(res => {
+      const iv = setInterval(() => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const t = video.currentTime;
+        if (onPct) onPct(Math.min(1, (t - start) / duration));
+        if (t >= end - 0.02 || video.ended || job?.cancelled) { clearInterval(iv); res(); }
+      }, 1000 / 30);
+    });
+    video.pause(); rec.stop(); await stopped;
+    if (actx) actx.close().catch(() => {});
+    const type = mime.split(';')[0];
+    return new File([new Blob(chunks, { type })], 'clip.' + (type === 'video/mp4' ? 'mp4' : 'webm'), { type });
+  } finally {
+    URL.revokeObjectURL(objUrl);
+  }
 }
 
 function loadVideoDuration(file, dataUrl, infoId, costId, metaId, cb) {
@@ -1055,11 +1397,11 @@ function loadVideoDuration(file, dataUrl, infoId, costId, metaId, cb) {
   v.src = dataUrl;
   v.onloadedmetadata = () => {
     const s = Math.round(v.duration);
-    const c = (s * 0.01).toFixed(2);
+    const t = videoTokens(v.duration);
     document.getElementById(infoId).textContent = `${s}s \u2014 ${fmtBytes(file.size)}`;
     const ce = document.getElementById(costId);
-    ce.textContent = `~$${c} estimated`;
-    ce.className = 'cost-note' + (parseFloat(c) > 2 ? ' warn' : '');
+    ce.textContent = `full video: ${t} tokens`;
+    ce.className = 'cost-note' + (t > 200 ? ' warn' : '');
     document.getElementById(metaId).style.display = 'flex';
     if (cb) cb(v.duration);
   };
@@ -1221,11 +1563,7 @@ async function poll(predId, job, steps, stepId) {
     if (!p) continue;
     const st = (p.status || '').toLowerCase();
     // Show live WaveSpeed queue/processing status in the job ETA field
-    const eta = document.getElementById(job.id + '-eta');
-    if (eta) {
-      if (st === 'queued' || st === 'pending') eta.textContent = 'Waiting in WaveSpeed queue\u2026';
-      else if (st === 'processing' || st === 'running') eta.textContent = 'WaveSpeed is processing\u2026';
-    }
+    job.status = (st === 'queued' || st === 'pending') ? 'queued' : 'processing';
     if (st === 'completed' || st === 'succeeded') {
       const out = p.outputs || p.output;
       const url = Array.isArray(out) ? out[0] : out;
@@ -1241,13 +1579,16 @@ async function poll(predId, job, steps, stepId) {
 // ─── Photo Swap ───────────────────────────────────────────────────────────────
 async function doPhotoSwap() {
   if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
-  setBtn('photo', true, 'Starting\u2026');
+  const cost = TOKEN_COST.photo;
+  if (getTokens() < cost) { spendTokens(null, cost); return; }
+  setBtn('photo', true, 'Starting…');
   if (!await preflight(0.012)) { setBtn('photo', false, 'Swap Face'); return; }
   setBtn('photo', false, 'Swap Face'); // re-enable — job runs in background
   const t0 = Date.now();
   const job = createJob('Photo Swap');
+  if (!spendTokens(job, cost, 'Photo Swap')) { removeJob(job.id); return; }
   const steps = jobSteps(job, [{id:'swap', label:'Running face swap'}]);
-  startJobGhost(job, 20000);
+  startJobGhost(job, estimateMs('photo'));
   markJobStep(job, steps, 'swap', 'active');
   try {
     const d = await apiPost('/api/v3/wavespeed-ai/image-face-swap', {
@@ -1258,55 +1599,64 @@ async function doPhotoSwap() {
       enable_sync_mode: false
     });
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
+    job.submitted = true;
     const url = await poll(id, job, steps, 'swap');
     if (job.cancelled) return;
+    job.settled = true;
+    recordSpeed('photo', Date.now() - t0);
     stopJobGhost(job, true);
-    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.012');
+    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `${cost} tokens`);
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
 // ─── Video Swap ───────────────────────────────────────────────────────────────
 async function doVideoSwap() {
   if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
-  setBtn('video', true, 'Starting\u2026');
-  if (!await preflight(0.01)) { setBtn('video', false, 'Swap Face'); return; }
+  const hasTrim = !isFullClip();
+  const trimS = _vTrimStart, trimE = _vTrimEnd;
+  const clipSec = clipSeconds() || 0;
+  const cost = videoTokens(clipSec);
+  if (getTokens() < cost) { spendTokens(null, cost); return; }
+  setBtn('video', true, 'Starting…');
+  if (!await preflight(cost * 0.01)) { setBtn('video', false, 'Swap Face'); return; }
   setBtn('video', false, 'Swap Face'); // re-enable immediately
   const t0 = Date.now();
-  const job = createJob('Video Swap');
-  const hasTrim = _vTrimEnd !== null && !(_vTrimStart === 0 && _vTrimEnd >= Math.floor(_vTrimDur));
+  const job = createJob(`Video Swap (${clipSec.toFixed(1)}s)`);
+  if (!spendTokens(job, cost, `Video Swap ${clipSec.toFixed(1)}s`)) { removeJob(job.id); return; }
   const stepDefs = hasTrim
-    ? [{id:'trim', label:`Trimming clip (${fmtSec(_vTrimStart)}→${fmtSec(_vTrimEnd)})`}, {id:'upload', label:'Uploading clip'}, {id:'swap', label:'Processing face swap'}]
+    ? [{id:'trim', label:`Cutting clip (${fmtSecT(trimS)} → ${fmtSecT(trimE)})`}, {id:'upload', label:'Uploading clip'}, {id:'swap', label:'Processing face swap'}]
     : [{id:'upload', label:'Uploading video'}, {id:'swap', label:'Processing face swap'}];
   const steps = jobSteps(job, stepDefs);
-  if (hasTrim) markJobStep(job, steps, 'trim', 'active');
-  else markJobStep(job, steps, 'upload', 'active');
+  // Bar slices: cut 0–15 %, upload to 30 %, processing to 100 %
+  const upFrom = hasTrim ? 15 : 0;
   try {
-    // Trim if user selected a section, then upload
-    const fileToSwap = await trimVideoIfNeeded(F['video-target'].file);
-    if (job.cancelled) return;
-    if (hasTrim) { markJobStep(job, steps, 'trim', 'done'); markJobStep(job, steps, 'upload', 'active'); }
-    const videoUrl = await uploadFileXHR(fileToSwap, pct => setJobUploadPct(job, pct), 'uprog');
+    let fileToSwap = F['video-target'].file;
+    if (hasTrim) {
+      markJobStep(job, steps, 'trim', 'active');
+      fileToSwap = await trimVideoIfNeeded(fileToSwap, f => setJobUploadPct(job, f, 0, 15, 'Cutting clip'), job);
+      if (job.cancelled) return;
+      markJobStep(job, steps, 'trim', 'done');
+    }
+    markJobStep(job, steps, 'upload', 'active');
+    const videoUrl = await uploadFileXHR(fileToSwap, f => setJobUploadPct(job, f, upFrom, 30), 'uprog');
     if (job.cancelled) return;
     markJobStep(job, steps, 'upload', 'done');
     markJobStep(job, steps, 'swap', 'active');
-    let estSecs = 60;
-    try {
-      const clipDur = hasTrim ? (_vTrimEnd - _vTrimStart) : _vTrimDur || 30;
-      estSecs = Math.max(30, clipDur * 5 + 20);
-    } catch(e){}
-    startJobGhost(job, estSecs * 1000);
+    const tSwap = Date.now();
+    startJobGhost(job, estimateMs('video', clipSec), 30);
     const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
       video: videoUrl,
       face_image: F['video-face'].dataUrl,
       target_index: parseInt(document.getElementById('sel-video-idx').value)
     });
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
+    job.submitted = true;
     const url = await poll(id, job, steps, 'swap');
     if (job.cancelled) return;
+    job.settled = true;
+    recordSpeed('video', Date.now() - tSwap, clipSec);
     stopJobGhost(job, true);
-    const clipDurForCost = hasTrim ? (_vTrimEnd - _vTrimStart) : _vTrimDur;
-    const cost = clipDurForCost ? '$'+(clipDurForCost*0.01).toFixed(2) : '?';
-    showJobResult(job, url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
+    showJobResult(job, url, true, fmtDur((Date.now()-t0)/1000)+' total', `${cost} tokens`);
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
@@ -1354,23 +1704,27 @@ function initRefDrop() {
 async function doCompose() {
   const prompt = document.getElementById('compose-prompt').value.trim();
   if (!refs.length || !prompt) { toast('Add at least one image and a prompt'); return; }
+  const cost = TOKEN_COST.compose;
+  if (getTokens() < cost) { spendTokens(null, cost); return; }
   setBtn('compose', true, 'Starting…');
   if (!await preflight(0.04)) { setBtn('compose', false, 'Build Image'); return; }
   setBtn('compose', false, 'Build Image');
   const t0 = Date.now();
   const snapshot = refs.slice();
   const job = createJob(`Image Builder (${snapshot.length} ref${snapshot.length > 1 ? 's' : ''})`);
+  if (!spendTokens(job, cost, 'Image Builder')) { removeJob(job.id); return; }
   const steps = jobSteps(job, [{id:'upload', label:`Uploading ${snapshot.length} image${snapshot.length > 1 ? 's' : ''}`}, {id:'gen', label:'Seedream 4.5 is building'}]);
   markJobStep(job, steps, 'upload', 'active');
   try {
     const pcts = snapshot.map(() => 0);
     const urls = await Promise.all(snapshot.map((r, i) => uploadFileXHR(r.file, p => {
-      pcts[i] = p; setJobUploadPct(job, pcts.reduce((a, b) => a + b, 0) / pcts.length);
+      pcts[i] = p; setJobUploadPct(job, pcts.reduce((a, b) => a + b, 0) / pcts.length, 0, 15);
     })));
     if (job.cancelled) return;
     markJobStep(job, steps, 'upload', 'done');
     markJobStep(job, steps, 'gen', 'active');
-    startJobGhost(job, 35000);
+    const tGen = Date.now();
+    startJobGhost(job, estimateMs('compose'), 15);
     const d = await apiPost('/api/v3/bytedance/seedream-v4.5/edit', {
       prompt,
       images: urls,
@@ -1379,10 +1733,13 @@ async function doCompose() {
       enable_base64_output: false
     });
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
+    job.submitted = true;
     const url = await poll(id, job, steps, 'gen');
     if (job.cancelled) return;
+    job.settled = true;
+    recordSpeed('compose', Date.now() - tGen);
     stopJobGhost(job, true);
-    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.04');
+    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `${cost} tokens`);
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
