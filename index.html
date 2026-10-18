@@ -7,7 +7,6 @@
 <meta name="description" content="grindspace — The Space to Grind. AI-powered face swap for photos and videos.">
 <meta property="og:title" content="grindspace — The Space to Grind">
 <meta property="og:description" content="AI face swap for photos & videos. No limits, no watermarks.">
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -84,6 +83,19 @@ main{max-width:920px;margin:0 auto;width:100%;padding:24px 16px;display:flex;fle
 .uz-preview img,.uz-preview video{width:100%;height:170px;object-fit:cover;border-radius:10px;display:block}
 .uz-rm{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.75);border:1px solid #555;border-radius:6px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px}
 .uz-rm:hover{background:var(--danger);border-color:var(--danger)}
+/* Image Builder reference grid */
+.ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;border-radius:14px;transition:background .2s}
+.ref-grid.drag{background:rgba(124,58,237,.07);outline:2px dashed var(--accent);outline-offset:4px}
+.ref-tile{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--surface);border:1px solid var(--border-h)}
+.ref-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.ref-num{position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,.75);color:#fff;font-size:10px;font-weight:700;border-radius:5px;padding:2px 6px}
+.ref-add{border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.ref-add:hover{border-color:var(--accent);background:rgba(124,58,237,.07)}
+.ref-add .uz-icon{margin-bottom:2px}
+.ref-count{color:var(--sub);font-weight:500;margin-left:6px}
+.ref-hint{font-size:11px;color:var(--sub);margin-top:8px}
+.compose-prompt{width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--border-h);border-radius:12px;color:var(--text);font:inherit;font-size:14px;line-height:1.5;padding:12px 14px;resize:vertical;outline:none;transition:border-color .2s}
+.compose-prompt:focus{border-color:var(--accent)}
 .uz-name{font-size:10px;color:var(--sub);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 input[type=file]{display:none}
 
@@ -336,51 +348,13 @@ select:focus{border-color:var(--accent)}
 
 <main>
 
-  <!-- ── Provider selector ──────────────────────────────────── -->
-  <div class="provider-section">
-    <div class="provider-label">AI Provider</div>
-    <div class="provider-cards">
-      <button class="prov-card active" id="prov-wavespeed" onclick="selectProvider('wavespeed')">
-        <span class="prov-name">⚡ WaveSpeed</span>
-        <span class="prov-tag">Fast · Current</span>
-        <div class="prov-prices">
-          <span class="prov-price active-price" id="ws-img-price">$0.012/photo</span>
-          <span class="prov-price active-price" id="ws-vid-price">$0.01/sec</span>
-        </div>
-      </button>
-      <button class="prov-card" id="prov-piapi" onclick="selectProvider('piapi')">
-        <span class="prov-name">🎯 PiAPI</span>
-        <span class="prov-tag">Higher quality</span>
-        <div class="prov-prices">
-          <span class="prov-price">$0.02/photo</span>
-          <span class="prov-price">~$0.05/video</span>
-        </div>
-      </button>
-      <button class="prov-card" id="prov-replicate" onclick="selectProvider('replicate')">
-        <span class="prov-name">🔁 Replicate</span>
-        <span class="prov-tag">Cheapest · Photos only</span>
-        <div class="prov-prices">
-          <span class="prov-price">$0.003/photo</span>
-          <span class="prov-price">+2× upscale</span>
-        </div>
-      </button>
-      <button class="prov-card" id="prov-akool" onclick="selectProvider('akool')">
-        <span class="prov-name">💎 Akool</span>
-        <span class="prov-tag">Premium quality</span>
-        <div class="prov-prices">
-          <span class="prov-price">~$0.05/photo</span>
-          <span class="prov-price">$0.05/sec video</span>
-        </div>
-      </button>
-    </div>
-  </div>
-  <!-- Provider options bar (key + feature toggles) -->
-  <div class="prov-opts-bar" id="prov-opts-bar">
-    <!-- Rendered by JS: updateProviderOptsBar() -->
-  </div>
 
   <div class="mode-tabs">
-    <button class="tab active" data-tab="photo" onclick="switchTab('photo')">
+    <button class="tab active" data-tab="compose" onclick="switchTab('compose')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3 1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/><path d="M19 17v4M17 19h4"/></svg>
+      Image Builder
+    </button>
+    <button class="tab" data-tab="photo" onclick="switchTab('photo')">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
       Photo Swap
     </button>
@@ -388,14 +362,42 @@ select:focus{border-color:var(--accent)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       Video Swap
     </button>
-    <button class="tab" data-tab="multi" onclick="switchTab('multi')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><circle cx="17" cy="17" r="4"/></svg>
-      Multi-Face
-    </button>
+  </div>
+
+  <!-- IMAGE BUILDER (Seedream 4.5) -->
+  <div class="panel active" id="tab-compose">
+    <div>
+      <div class="slabel" style="margin-bottom:8px">Reference Images <span class="ref-count" id="ref-count">0 / 10</span></div>
+      <input type="file" id="inp-refs" accept="image/*" multiple style="display:none" onchange="onRefsPick(this.files);this.value=''">
+      <div class="ref-grid" id="ref-grid"></div>
+      <div class="ref-hint">People, obstacles, locations, outfits. Say in the prompt which image is what ("image 1", "image 2" &hellip;).</div>
+    </div>
+    <div>
+      <div class="slabel" style="margin-bottom:8px">What should happen?</div>
+      <textarea id="compose-prompt" class="compose-prompt" rows="4" oninput="checkBtns()"
+        placeholder="e.g. The athlete from image 1 hangs one-armed from the salmon ladder in image 2, 8 m above water, golden hour, shot on 35 mm"></textarea>
+    </div>
+    <div class="ctrl-row">
+      <div class="sel-wrap">
+        <label>Format:</label>
+        <select id="sel-compose-size">
+          <option value="2048*2048">1:1 Square</option>
+          <option value="1728*2304">3:4 Portrait</option>
+          <option value="1440*2560" selected>9:16 Reel</option>
+          <option value="2304*1728">4:3 Landscape</option>
+          <option value="2560*1440">16:9 Wide</option>
+        </select>
+      </div>
+      <button class="btn-swap" id="btn-compose" onclick="doCompose()" disabled>
+        <svg id="btn-compose-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3 1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/></svg>
+        <span id="btn-compose-lbl">Build Image</span>
+      </button>
+      <span class="cost-note">Seedream 4.5 &middot; $0.04 per image</span>
+    </div>
   </div>
 
   <!-- PHOTO SWAP -->
-  <div class="panel active" id="tab-photo">
+  <div class="panel" id="tab-photo">
     <div class="upload-grid">
       <div>
         <div class="slabel" style="margin-bottom:8px">Target Image</div>
@@ -511,62 +513,6 @@ select:focus{border-color:var(--accent)}
     </div>
   </div>
 
-  <!-- MULTI-FACE -->
-  <div class="panel" id="tab-multi">
-    <div class="mf-hint" id="mf-hint">
-      <strong>Multi-face mode:</strong> Upload a group photo or video, then assign a replacement face to each person.
-      Faces are numbered by size (0&nbsp;=&nbsp;largest). Each face is swapped in sequence.
-    </div>
-
-    <!-- Image / Video toggle -->
-    <div>
-      <div class="slabel" style="margin-bottom:8px">Media type</div>
-      <div class="type-toggle">
-        <button class="type-btn active" id="mf-type-img" onclick="setMFType('image')">&#128247; Photo</button>
-        <button class="type-btn" id="mf-type-vid" onclick="setMFType('video')">&#127909; Video</button>
-      </div>
-    </div>
-
-    <div style="max-width:400px">
-      <div class="slabel" style="margin-bottom:8px" id="mf-target-lbl">Target Image</div>
-      <div class="upload-zone" id="uz-multi-target" onclick="triggerFile('inp-multi-target')">
-        <input type="file" id="inp-multi-target" accept="image/*" onchange="onFilePick(this,'multi-target')">
-        <div id="ph-multi-target-empty">
-          <div class="uz-icon">&#128247;</div>
-          <div class="uz-title">Drop group photo</div>
-          <div class="uz-sub">Image with multiple faces</div>
-        </div>
-        <div id="ph-multi-target-filled" style="display:none;width:100%"></div>
-      </div>
-      <div id="mf-video-meta" style="display:none" class="video-meta">
-        <span id="mf-video-info"></span><span id="mf-video-cost" class="cost-note"></span>
-      </div>
-      <div class="uprog" id="mf-uprog"><div class="uprog-bar" id="mf-uprog-bar"></div></div>
-    </div>
-
-    <div id="mf-detect-section" style="display:none">
-      <div class="slabel" style="margin-bottom:8px">Detected Faces</div>
-      <div class="mf-canvas-wrap">
-        <canvas id="mf-canvas"></canvas>
-      </div>
-      <div id="mf-detect-msg" style="font-size:11px;color:var(--sub);margin-top:6px">Detecting faces&hellip;</div>
-    </div>
-
-    <div id="mf-assign-section" style="display:none">
-      <div class="slabel" style="margin-bottom:10px">Assign Replacement Faces</div>
-      <div class="mf-grid" id="mf-grid"></div>
-      <div style="font-size:11px;color:var(--sub);margin-top:6px">Only assigned faces will be swapped.</div>
-    </div>
-
-    <div class="ctrl-row" id="mf-ctrl" style="display:none">
-      <button class="btn-swap" id="btn-multi" onclick="doMultiSwap()">
-        <svg id="btn-multi-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4"/><circle cx="17" cy="17" r="4"/></svg>
-        <span id="btn-multi-lbl">Swap All Faces</span>
-      </button>
-      <span class="cost-note" id="mf-cost">~$0.012 per pass</span>
-    </div>
-  </div>
-
   <!-- JOBS — parallel swap queue, each swap gets its own card -->
   <div class="jobs-container" id="jobs-container"></div>
 </main>
@@ -656,6 +602,7 @@ function doLogin() {
 }
 
 function onAuthed() {
+  document.getElementById('login-overlay').style.display = 'none';
   startIdleWatch();
   const lockBtn = document.getElementById('btn-lock');
   if (lockBtn) { lockBtn.style.display = 'inline-flex'; }
@@ -696,115 +643,24 @@ function resetIdle() {
 
 // ─── State ────────────────────────────────────────────────────────────────────
 const F = {};
-let mfFaces = [];
-let mfAssigned = {};
-let mfImg = null;
-let mfIsVideo = false;
-let mfVideoDuration = 0;
-
-// ─── Multi-provider state ──────────────────────────────────────────────────────
-const PROVIDERS = {
-  wavespeed: { name: 'WaveSpeed', lsKey: 'wsKey',  color: '#7c3aed' },
-  piapi:     { name: 'PiAPI',     lsKey: 'piKey',  color: '#2563eb' },
-  replicate: { name: 'Replicate', lsKey: 'repKey', color: '#059669' },
-  akool:     { name: 'Akool',     lsKey: 'akKey',  color: '#d97706' }
-};
-let selectedProvider = localStorage.getItem('gs_provider') || 'wavespeed';
-// Per-provider keys
-const pKeys = {};
-Object.keys(PROVIDERS).forEach(p => { pKeys[p] = localStorage.getItem(PROVIDERS[p].lsKey) || ''; });
-// Per-provider feature opts
-const pOpts = {
-  wavespeed: {},
-  piapi:     { faceEnhance: false },
-  replicate: { upscale: false, model: 'easel/advanced-face-swap', gender: '' },
-  akool:     { faceEnhance: false }
-};
-// Convenience getter — always returns the active provider's key
-function apiKey() { return pKeys[selectedProvider] || ''; }
-
-function selectProvider(p) {
-  selectedProvider = p;
-  localStorage.setItem('gs_provider', p);
-  document.querySelectorAll('.prov-card').forEach(c => c.classList.remove('active'));
-  const card = document.getElementById('prov-' + p);
-  if (card) card.classList.add('active');
-  updateProviderOptsBar();
-  // Sync header key input to selected provider key
-  const keyEl = document.getElementById('apiKey');
-  if (keyEl) keyEl.value = pKeys[p];
-  dot();
-}
-
-function updateProviderOptsBar() {
-  const bar = document.getElementById('prov-opts-bar');
-  if (!bar) return;
-  const p = selectedProvider;
-  const key = pKeys[p];
-  const saved = key.length > 8 ? ' saved' : '';
-
-  let extraOpts = '';
-  if (p === 'replicate') {
-    extraOpts = `
-      <select class="prov-select" onchange="pOpts.replicate.model=this.value;checkBtns()" title="Replicate model">
-        <option value="easel/advanced-face-swap" ${pOpts.replicate.model==='easel/advanced-face-swap'?'selected':''}>easel — best quality</option>
-        <option value="codeplugtech/face-swap" ${pOpts.replicate.model==='codeplugtech/face-swap'?'selected':''}>codeplugtech — fast/cheap</option>
-      </select>
-      <label class="prov-opt-toggle">
-        <input type="checkbox" ${pOpts.replicate.upscale?'checked':''} onchange="pOpts.replicate.upscale=this.checked">
-        2× Upscale
-      </label>
-      <select class="prov-select" onchange="pOpts.replicate.gender=this.value" title="Gender hint for better swap">
-        <option value="" ${!pOpts.replicate.gender?'selected':''}>Auto gender</option>
-        <option value="man" ${pOpts.replicate.gender==='man'?'selected':''}>Man</option>
-        <option value="woman" ${pOpts.replicate.gender==='woman'?'selected':''}>Woman</option>
-      </select>
-      <span class="prov-note">Photos only — videos not supported</span>`;
-  } else if (p === 'piapi') {
-    extraOpts = `
-      <label class="prov-opt-toggle">
-        <input type="checkbox" ${pOpts.piapi.faceEnhance?'checked':''} onchange="pOpts.piapi.faceEnhance=this.checked">
-        Face Enhance
-      </label>`;
-  } else if (p === 'akool') {
-    extraOpts = `
-      <label class="prov-opt-toggle">
-        <input type="checkbox" ${pOpts.akool.faceEnhance?'checked':''} onchange="pOpts.akool.faceEnhance=this.checked">
-        Face Enhance
-      </label>
-      <span class="prov-note">Premium — uploads via WaveSpeed for URLs</span>`;
-  }
-
-  const placeholder = p === 'wavespeed' ? 'WaveSpeed API key…'
-    : p === 'piapi'     ? 'PiAPI x-api-key…'
-    : p === 'akool'     ? 'Akool API key…'
-    : 'Replicate API token…';
-  bar.innerHTML = `
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    <div class="prov-key-wrap${saved}" id="prov-key-wrap-${p}">
-      <input type="password" id="prov-key-input" placeholder="${placeholder}" autocomplete="off" value="${key}"
-        oninput="pKeys['${p}']=this.value.trim();localStorage.setItem('${PROVIDERS[p].lsKey}',pKeys['${p}']);if('${p}'==='wavespeed'){apiKeyEl().value=pKeys['${p}'];}dot()">
-    </div>
-    ${extraOpts}`;
-}
-
-function apiKeyEl() { return document.getElementById('apiKey'); }
+const refs = []; // Seedream reference images: [{file, dataUrl}]
+const MAX_REFS = 10;
+let wsKey = localStorage.getItem('wsKey') || '';
+function apiKey() { return wsKey; }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 const keyEl = document.getElementById('apiKey');
-// Load WaveSpeed key into header input (backward compat)
-let _wsKey = pKeys['wavespeed'];
-keyEl.value = _wsKey;
+keyEl.value = wsKey;
 keyEl.addEventListener('input', e => {
-  pKeys['wavespeed'] = e.target.value.trim();
-  localStorage.setItem('wsKey', pKeys['wavespeed']);
-  if (selectedProvider === 'wavespeed') dot();
+  wsKey = e.target.value.trim();
+  localStorage.setItem('wsKey', wsKey);
+  dot();
   flashSaved();
 });
-// Init provider UI
-selectProvider(selectedProvider);
 dot();
 initDrop();
+renderRefs();
+initRefDrop();
 checkAuth();
 
 function dot() {
@@ -1057,37 +913,6 @@ function switchTab(t) {
   document.querySelectorAll('.panel').forEach(el => el.classList.toggle('active', el.id === 'tab-' + t));
 }
 
-// ─── Multi-face type toggle ───────────────────────────────────────────────────
-function setMFType(type) {
-  mfIsVideo = (type === 'video');
-  document.getElementById('mf-type-img').classList.toggle('active', !mfIsVideo);
-  document.getElementById('mf-type-vid').classList.toggle('active', mfIsVideo);
-
-  // Update upload zone
-  const inp = document.getElementById('inp-multi-target');
-  inp.accept = mfIsVideo ? 'video/*' : 'image/*';
-
-  const lbl = document.getElementById('mf-target-lbl');
-  lbl.textContent = mfIsVideo ? 'Target Video' : 'Target Image';
-
-  const empty = document.getElementById('ph-multi-target-empty');
-  empty.querySelector('.uz-icon').textContent = mfIsVideo ? '\u{1F3A5}' : '\u{1F4F7}';
-  empty.querySelector('.uz-title').textContent = mfIsVideo ? 'Drop group video' : 'Drop group photo';
-  empty.querySelector('.uz-sub').textContent = mfIsVideo
-    ? 'Video with multiple faces \u2014 up to 200 MB'
-    : 'Image with multiple faces';
-
-  // Clear current upload and detection
-  removeFile('multi-target');
-
-  const hint = document.getElementById('mf-hint');
-  if (mfIsVideo) {
-    hint.innerHTML = '<strong>Multi-face video mode:</strong> Upload a video with multiple people. A frame is extracted for face detection. Assign a replacement face photo to each person &mdash; the video will be processed sequentially for each face.';
-  } else {
-    hint.innerHTML = '<strong>Multi-face mode:</strong> Upload a group photo, then assign a replacement face to each person. Faces are numbered by size (0&nbsp;=&nbsp;largest). Each face is swapped in sequence.';
-  }
-}
-
 // ─── File Handling ────────────────────────────────────────────────────────────
 function triggerFile(id) { document.getElementById(id).click(); }
 
@@ -1108,16 +933,6 @@ function onFilePick(input, key) {
 function afterLoad(key, file, dataUrl) {
   showPreview(key, file, dataUrl);
   if (key === 'video-target') { loadVideoDuration(file, dataUrl, 'video-info', 'video-cost', 'video-meta', null); initVideoTrimUI(dataUrl); }
-  if (key === 'multi-target') {
-    if (mfIsVideo) {
-      loadVideoDuration(file, dataUrl, 'mf-video-info', 'mf-video-cost', 'mf-video-meta', dur => {
-        mfVideoDuration = dur;
-        extractVideoFrame(dataUrl, dur, detectFacesFromFrame);
-      });
-    } else {
-      detectFaces(dataUrl);
-    }
-  }
   checkBtns();
 }
 
@@ -1151,7 +966,6 @@ function removeFile(key, e) {
   if (filled) { filled.style.display = 'none'; filled.innerHTML = ''; }
   if (uz) uz.classList.remove('has-file');
   if (inp) inp.value = '';
-  if (key === 'multi-target') resetMF();
   if (key === 'video-target') { document.getElementById('video-meta').style.display = 'none'; hideVideoTrimUI(); }
   checkBtns();
 }
@@ -1253,12 +1067,10 @@ function loadVideoDuration(file, dataUrl, infoId, costId, metaId, cb) {
 
 function checkBtns() {
   const k = apiKey();
-  const repVideoUnsupported = selectedProvider === 'replicate';
+  const prompt = (document.getElementById('compose-prompt')?.value || '').trim();
+  document.getElementById('btn-compose').disabled = !(refs.length && prompt && k);
   document.getElementById('btn-photo').disabled = !(F['photo-target'] && F['photo-face'] && k);
-  document.getElementById('btn-video').disabled = !(F['video-target'] && F['video-face'] && k) || repVideoUnsupported;
-  // Show a note on the video swap button if Replicate is selected
-  const lbl = document.getElementById('btn-video-lbl');
-  if (lbl) lbl.textContent = repVideoUnsupported ? 'Photos only' : 'Swap Face';
+  document.getElementById('btn-video').disabled = !(F['video-target'] && F['video-face'] && k);
 }
 
 // ─── Drag & Drop ──────────────────────────────────────────────────────────────
@@ -1278,218 +1090,11 @@ function initDrop() {
   });
 }
 
-// ─── Video Frame Extraction ───────────────────────────────────────────────────
-function extractVideoFrame(dataUrl, duration, callback) {
-  resetMF();
-  const sec = document.getElementById('mf-detect-section');
-  sec.style.display = 'block';
-  document.getElementById('mf-detect-msg').textContent = 'Extracting frame for face detection\u2026';
-
-  const v = document.createElement('video');
-  v.src = dataUrl;
-  v.muted = true;
-  v.crossOrigin = 'anonymous';
-  v.onloadedmetadata = () => {
-    // Seek to 10% of the video (usually shows faces clearly)
-    const seekTo = Math.min(2, duration * 0.1);
-    v.currentTime = seekTo;
-  };
-  v.onseeked = () => {
-    const canvas = document.getElementById('mf-canvas');
-    canvas.width = v.videoWidth; canvas.height = v.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(v, 0, 0);
-    // Convert frame to image element for FaceDetector
-    const frameUrl = canvas.toDataURL('image/jpeg', 0.9);
-    document.getElementById('mf-detect-msg').textContent = 'Frame extracted. Running face detection\u2026';
-    callback(frameUrl, ctx, canvas);
-  };
-  v.load();
-}
-
-// ─── Multi-Face Detection (image) ────────────────────────────────────────────
-function resetMF() {
-  mfFaces = []; mfAssigned = {}; mfImg = null;
-  document.getElementById('mf-detect-section').style.display = 'none';
-  document.getElementById('mf-assign-section').style.display = 'none';
-  document.getElementById('mf-ctrl').style.display = 'none';
-  document.getElementById('mf-video-meta').style.display = 'none';
-}
-
-async function detectFaces(dataUrl) {
-  resetMF();
-  document.getElementById('mf-detect-section').style.display = 'block';
-  document.getElementById('mf-detect-msg').textContent = 'Loading image\u2026';
-
-  const img = new Image();
-  img.onload = async () => {
-    mfImg = img;
-    const canvas = document.getElementById('mf-canvas');
-    canvas.width = img.width; canvas.height = img.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
-    document.getElementById('mf-detect-msg').textContent = 'Detecting faces\u2026';
-    await runDetection(img, ctx, canvas);
-  };
-  img.src = dataUrl;
-}
-
-async function detectFacesFromFrame(frameUrl, ctx, canvas) {
-  const img = new Image();
-  img.onload = async () => {
-    mfImg = img;
-    await runDetection(img, ctx, canvas);
-  };
-  img.src = frameUrl;
-}
-
-// face-api.js model loading (lazy)
-let faceApiReady = false;
-const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
-
-async function ensureFaceApi() {
-  if (faceApiReady) return true;
-  if (typeof faceapi === 'undefined') return false;
-  try {
-    document.getElementById('mf-detect-msg').textContent = 'Loading face detection model\u2026';
-    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    faceApiReady = true;
-    return true;
-  } catch(e) { return false; }
-}
-
-async function runDetection(imgEl, ctx, canvas) {
-  let detected = false;
-
-  // Try face-api.js (tinyFaceDetector) — works in all modern browsers
-  const apiReady = await ensureFaceApi();
-  if (apiReady) {
-    try {
-      document.getElementById('mf-detect-msg').textContent = 'Detecting faces\u2026';
-      const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.35 });
-      const results = await faceapi.detectAllFaces(imgEl, opts);
-      if (results.length > 0) {
-        results.sort((a, b) =>
-          (b.box.width * b.box.height) - (a.box.width * a.box.height)
-        );
-        mfFaces = results.map((f, i) => ({
-          idx: i, x: f.box.x, y: f.box.y, w: f.box.width, h: f.box.height
-        }));
-        drawBoxes(ctx, canvas);
-        document.getElementById('mf-detect-msg').textContent =
-          mfFaces.length + ' face' + (mfFaces.length !== 1 ? 's' : '') + ' detected' +
-          (mfIsVideo ? ' \u2014 from extracted frame' : '');
-        detected = true;
-      }
-    } catch(e) { /* fallthrough to native */ }
-  }
-
-  // Fallback: native FaceDetector API (Chrome only)
-  if (!detected && 'FaceDetector' in window) {
-    try {
-      const fd = new FaceDetector({ fastMode: false, maxDetectedFaces: 10 });
-      const results = await fd.detect(imgEl);
-      if (results.length > 0) {
-        results.sort((a, b) =>
-          (b.boundingBox.width * b.boundingBox.height) - (a.boundingBox.width * a.boundingBox.height)
-        );
-        mfFaces = results.map((f, i) => ({
-          idx: i, x: f.boundingBox.x, y: f.boundingBox.y,
-          w: f.boundingBox.width, h: f.boundingBox.height
-        }));
-        drawBoxes(ctx, canvas);
-        document.getElementById('mf-detect-msg').textContent =
-          mfFaces.length + ' face' + (mfFaces.length !== 1 ? 's' : '') + ' detected';
-        detected = true;
-      }
-    } catch(e) { /* fallthrough */ }
-  }
-
-  if (!detected) {
-    mfFaces = [];
-    document.getElementById('mf-detect-msg').textContent =
-      'No faces detected automatically. Use the numbered slots below (0\u00a0=\u00a0largest face, assign photos manually).';
-  }
-  buildFaceCards(detected ? mfFaces.length : 5);
-}
-
-function drawBoxes(ctx, canvas) {
-  ctx.drawImage(mfImg, 0, 0);
-  const colors = ['#a855f7','#22c55e','#f59e0b','#3b82f6','#ef4444','#ec4899'];
-  const lw = Math.max(2, Math.round(canvas.width / 180));
-  const fs = Math.max(12, Math.round(canvas.width / 35));
-  mfFaces.forEach((f, i) => {
-    const c = colors[i % colors.length];
-    ctx.strokeStyle = c; ctx.lineWidth = lw;
-    ctx.strokeRect(f.x, f.y, f.w, f.h);
-    ctx.fillStyle = c;
-    ctx.fillRect(f.x - lw/2, f.y - fs - 6, fs + 10, fs + 8);
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${fs}px sans-serif`;
-    ctx.fillText(i, f.x + 4, f.y - 4);
-  });
-}
-
-function buildFaceCards(count) {
-  const grid = document.getElementById('mf-grid');
-  grid.innerHTML = '';
-  for (let i = 0; i < count; i++) {
-    let thumbHtml = `<div class="face-thumb">${i}</div>`;
-    if (mfFaces[i] && mfImg) {
-      const tmp = document.createElement('canvas');
-      const pad = 0.35;
-      const fx = Math.max(0, mfFaces[i].x - mfFaces[i].w * pad);
-      const fy = Math.max(0, mfFaces[i].y - mfFaces[i].h * pad);
-      const fw = Math.min(mfImg.width - fx, mfFaces[i].w * (1 + pad * 2));
-      const fh = Math.min(mfImg.height - fy, mfFaces[i].h * (1 + pad * 2));
-      tmp.width = fw; tmp.height = fh;
-      tmp.getContext('2d').drawImage(mfImg, fx, fy, fw, fh, 0, 0, fw, fh);
-      thumbHtml = `<div class="face-thumb"><img src="${tmp.toDataURL()}" alt=""></div>`;
-    }
-    const lbl = ['Largest','2nd largest','3rd largest','4th','5th','6th'][i] || `Face ${i}`;
-    const card = document.createElement('div');
-    card.className = 'face-card'; card.id = `fcard-${i}`;
-    card.innerHTML = `
-      ${thumbHtml}
-      <div class="face-lbl">Face ${i} &mdash; ${lbl}</div>
-      <div class="face-assigned-wrap" id="faw-${i}">
-        <img class="face-assigned-img" id="fai-${i}" src="" alt="">
-        <div class="face-assigned-nm" id="fan-${i}"></div>
-      </div>
-      <button class="btn-assign" onclick="assignFace(${i})">+ Assign photo</button>
-      <input type="file" id="fi-${i}" accept="image/*" style="display:none" onchange="onAssign(this,${i})">
-    `;
-    grid.appendChild(card);
-  }
-  document.getElementById('mf-assign-section').style.display = 'block';
-  document.getElementById('mf-ctrl').style.display = 'flex';
-}
-
-function assignFace(i) { document.getElementById('fi-' + i).click(); }
-
-function onAssign(inp, i) {
-  const file = inp.files[0]; if (!file) return;
-  const r = new FileReader();
-  r.onload = e => {
-    mfAssigned[i] = {file, dataUrl: e.target.result};
-    document.getElementById('fai-' + i).src = e.target.result;
-    document.getElementById('fan-' + i).textContent = file.name;
-    document.getElementById('faw-' + i).style.display = 'flex';
-    document.getElementById('fcard-' + i).classList.add('assigned');
-    const n = Object.keys(mfAssigned).length;
-    const baseCost = mfIsVideo ? (mfVideoDuration * 0.01) : 0.012;
-    document.getElementById('mf-cost').textContent =
-      `~$${(n * baseCost).toFixed(3)} (${n} pass${n>1?'es':''})`;
-  };
-  r.readAsDataURL(file);
-}
-
 // ─── API guards ───────────────────────────────────────────────────────────────
 // Returns an error string if the key looks wrong, null if it looks ok
 function keyFormatError() {
   const k = apiKey();
-  const provName = PROVIDERS[selectedProvider].name;
-  if (!k || k.length < 8) return `No ${provName} API key entered.`;
+  if (!k || k.length < 8) return 'No WaveSpeed API key entered.';
   return null;
 }
 
@@ -1497,8 +1102,6 @@ function keyFormatError() {
 async function preflight(minCost) {
   const keyErr = keyFormatError();
   if (keyErr) { toast('\u26A0\uFE0F ' + keyErr); return false; }
-  // Balance check only for WaveSpeed (other providers don't have a balance endpoint we can easily hit)
-  if (selectedProvider !== 'wavespeed') return true;
   try {
     const r = await apiFetch('/api/v3/balance', { headers: {'Authorization': `Bearer ${apiKey()}`} });
     const d = await r.json();
@@ -1635,408 +1238,8 @@ async function poll(predId, job, steps, stepId) {
   throw new Error('Timeout');
 }
 
-// ─── PiAPI Swap ───────────────────────────────────────────────────────────────
-async function doPhotoSwapPiAPI() {
-  if (!F['photo-target'] || !F['photo-face']) { toast('Upload both files first'); return; }
-  setBtn('photo', true, 'Starting…');
-  if (!await preflight(0)) { setBtn('photo', false, 'Swap Face'); return; }
-  setBtn('photo', false, 'Swap Face');
-  const t0 = Date.now();
-  const job = createJob('Photo Swap · PiAPI');
-  const steps = jobSteps(job, [{id:'swap', label:'PiAPI processing'}]);
-  markJobStep(job, steps, 'swap', 'active');
-  startJobGhost(job, 25000);
-  try {
-    const body = {
-      model: 'Qubico/image-toolkit',
-      task_type: 'face-swap',
-      input: {
-        target_image: F['photo-target'].dataUrl,
-        swap_image:   F['photo-face'].dataUrl
-      }
-    };
-    const r = await fetch(PROXY + '/piapi/api/v1/task', {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d?.message || d?.error?.message || `HTTP ${r.status}`);
-    const taskId = d?.data?.task_id;
-    if (!taskId) throw new Error('No task ID from PiAPI');
-    const url = await pollPiAPI(taskId, job, steps, 'swap');
-    if (job.cancelled) return;
-    stopJobGhost(job, true);
-    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.02');
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function doVideoSwapPiAPI() {
-  if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
-  setBtn('video', true, 'Starting…');
-  if (!await preflight(0)) { setBtn('video', false, 'Swap Face'); return; }
-  setBtn('video', false, 'Swap Face');
-  const t0 = Date.now();
-  const job = createJob('Video Swap · PiAPI');
-  const hasTrim = _vTrimEnd !== null && !(_vTrimStart === 0 && _vTrimEnd >= Math.floor(_vTrimDur));
-  const stepDefs = hasTrim
-    ? [{id:'trim',label:`Trimming (${fmtSec(_vTrimStart)}→${fmtSec(_vTrimEnd)})`},{id:'upload',label:'Uploading video'},{id:'swap',label:'PiAPI processing'}]
-    : [{id:'upload',label:'Uploading video'},{id:'swap',label:'PiAPI processing'}];
-  const steps = jobSteps(job, stepDefs);
-  if (hasTrim) markJobStep(job, steps, 'trim', 'active');
-  else markJobStep(job, steps, 'upload', 'active');
-  try {
-    const fileToSwap = await trimVideoIfNeeded(F['video-target'].file);
-    if (job.cancelled) return;
-    if (hasTrim) { markJobStep(job, steps, 'trim', 'done'); markJobStep(job, steps, 'upload', 'active'); }
-    // PiAPI video needs a URL — upload via WaveSpeed upload endpoint (free, no credit cost)
-    const videoUrl = await uploadFileXHR(fileToSwap, pct => setJobUploadPct(job, pct), 'uprog');
-    if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    markJobStep(job, steps, 'swap', 'active');
-    const clipDur = hasTrim ? (_vTrimEnd - _vTrimStart) : _vTrimDur;
-    startJobGhost(job, Math.max(60, clipDur * 6 + 20) * 1000);
-    const body = {
-      model: 'Qubico/video-toolkit',
-      task_type: 'face-swap',
-      input: {
-        swap_image:          F['video-face'].dataUrl,
-        target_video:        videoUrl,
-        swap_faces_index:    0,
-        target_faces_index:  parseInt(document.getElementById('sel-video-idx').value) || 0
-      }
-    };
-    const r = await fetch(PROXY + '/piapi/api/v1/task', {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d?.message || d?.error?.message || `HTTP ${r.status}`);
-    const taskId = d?.data?.task_id;
-    if (!taskId) throw new Error('No task ID from PiAPI');
-    const url = await pollPiAPI(taskId, job, steps, 'swap');
-    if (job.cancelled) return;
-    stopJobGhost(job, true);
-    const cost = clipDur ? '$'+(clipDur*0.01).toFixed(2)+' est.' : '?';
-    showJobResult(job, url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function pollPiAPI(taskId, job, steps, stepId) {
-  const deadline = Date.now() + 35 * 60 * 1000;
-  for (let i = 0; i < 800; i++) {
-    if (job.cancelled) throw new Error('Cancelled');
-    if (Date.now() > deadline) throw new Error('PiAPI took over 35 min — job may be stuck.');
-    await sleep(3000);
-    if (job.cancelled) throw new Error('Cancelled');
-    let d;
-    try {
-      const r = await fetch(PROXY + `/piapi/api/v1/task/${taskId}`, { headers: { 'x-api-key': apiKey() } });
-      d = await r.json();
-    } catch(e) { continue; }
-    const status = (d?.data?.status || '').toLowerCase();
-    const eta = document.getElementById(job.id + '-eta');
-    if (eta) {
-      if (status === 'pending') eta.textContent = 'Waiting in PiAPI queue…';
-      else if (status === 'processing') eta.textContent = 'PiAPI is processing…';
-    }
-    if (status === 'completed') {
-      const out = d?.data?.output;
-      const url = out?.image_url || out?.video_url || out?.result_url || (Array.isArray(out) ? out[0] : null);
-      if (url) return url;
-      throw new Error('PiAPI completed but no output URL');
-    }
-    if (status === 'failed') throw new Error(d?.data?.error || 'PiAPI processing failed');
-  }
-  throw new Error('PiAPI polling limit reached');
-}
-
-// ─── Replicate Swap ───────────────────────────────────────────────────────────
-async function doPhotoSwapReplicate() {
-  if (!F['photo-target'] || !F['photo-face']) { toast('Upload both files first'); return; }
-  setBtn('photo', true, 'Starting…');
-  if (!await preflight(0)) { setBtn('photo', false, 'Swap Face'); return; }
-  setBtn('photo', false, 'Swap Face');
-  const t0 = Date.now();
-  const model = pOpts.replicate.model || 'easel/advanced-face-swap';
-  const job = createJob(`Photo Swap · Replicate (${model.split('/')[0]})`);
-  const steps = jobSteps(job, [{id:'upload', label:'Uploading images'}, {id:'swap', label:'Replicate processing'}]);
-  markJobStep(job, steps, 'upload', 'active');
-  startJobGhost(job, 40000);
-  try {
-    // Replicate needs URLs — upload both images via WaveSpeed upload (no credit cost, just storage)
-    toast('Uploading images to get URLs for Replicate…');
-    const [targetUrl, faceUrl] = await Promise.all([
-      uploadFileXHR(F['photo-target'].file, null, null),
-      uploadFileXHR(F['photo-face'].file,   null, null)
-    ]);
-    if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    markJobStep(job, steps, 'swap', 'active');
-    const input = { target_image: targetUrl, swap_image: faceUrl };
-    if (pOpts.replicate.upscale) input.upscale = true;
-    if (pOpts.replicate.gender) input.user_gender = pOpts.replicate.gender;
-    const r = await fetch(PROXY + `/replicate/v1/models/${model}/predictions`, {
-      method: 'POST',
-      headers: { 'Authorization': `Token ${apiKey()}`, 'Content-Type': 'application/json', 'Prefer': 'wait' },
-      body: JSON.stringify({ input })
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d?.detail || d?.error || `Replicate HTTP ${r.status}`);
-    // If status is already succeeded (sync), grab output immediately
-    if (d.status === 'succeeded') {
-      const url = Array.isArray(d.output) ? d.output[0] : d.output;
-      stopJobGhost(job, true);
-      showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.003');
-      return;
-    }
-    const predId = d?.id;
-    if (!predId) throw new Error('No prediction ID from Replicate');
-    const url = await pollReplicate(predId, job, steps, 'swap');
-    if (job.cancelled) return;
-    stopJobGhost(job, true);
-    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.003');
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function pollReplicate(predId, job, steps, stepId) {
-  const deadline = Date.now() + 20 * 60 * 1000;
-  for (let i = 0; i < 400; i++) {
-    if (job.cancelled) throw new Error('Cancelled');
-    if (Date.now() > deadline) throw new Error('Replicate took over 20 min — check replicate.com status.');
-    await sleep(3000);
-    if (job.cancelled) throw new Error('Cancelled');
-    let d;
-    try {
-      const r = await fetch(PROXY + `/replicate/v1/predictions/${predId}`, {
-        headers: { 'Authorization': `Token ${apiKey()}` }
-      });
-      d = await r.json();
-    } catch(e) { continue; }
-    const status = (d?.status || '').toLowerCase();
-    const eta = document.getElementById(job.id + '-eta');
-    if (eta) {
-      if (status === 'starting') eta.textContent = 'Replicate starting…';
-      else if (status === 'processing') eta.textContent = 'Replicate processing…';
-    }
-    if (status === 'succeeded') {
-      const url = Array.isArray(d.output) ? d.output[0] : d.output;
-      if (url) return url;
-      throw new Error('Replicate succeeded but no output URL');
-    }
-    if (status === 'failed' || status === 'canceled') throw new Error(d?.error || 'Replicate processing failed');
-  }
-  throw new Error('Replicate polling limit reached');
-}
-
-// ─── Akool Swap ───────────────────────────────────────────────────────────────
-// Akool needs public URLs — we upload via WaveSpeed upload first (no WS credit cost)
-async function doPhotoSwapAkool() {
-  if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
-  setBtn('photo', true, 'Starting…');
-  if (!await preflight(0)) { setBtn('photo', false, 'Swap Face'); return; }
-  setBtn('photo', false, 'Swap Face');
-  const t0 = Date.now();
-  const job = createJob('Photo Swap · Akool');
-  const steps = jobSteps(job, [{id:'upload', label:'Uploading images'}, {id:'swap', label:'Akool processing'}]);
-  markJobStep(job, steps, 'upload', 'active');
-  startJobGhost(job, 45000);
-  try {
-    const [targetUrl, faceUrl] = await Promise.all([
-      uploadFileXHR(F['photo-target'].file, null, null),
-      uploadFileXHR(F['photo-face'].file,   null, null)
-    ]);
-    if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    markJobStep(job, steps, 'swap', 'active');
-    const body = {
-      sourceImage: [{ path: faceUrl }],
-      targetImage: [{ path: targetUrl }],
-      model_name: 'akool_faceswap_image_hq',
-      face_enhance: !!pOpts.akool.faceEnhance
-    };
-    const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByImage', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const d = await r.json();
-    if (!r.ok || d.code !== 1000) throw new Error(d?.msg || d?.message || `Akool HTTP ${r.status}`);
-    const jobId = d?.data?._id;
-    if (!jobId) throw new Error('No job ID from Akool');
-    const url = await pollAkool(jobId, job, steps, 'swap', false);
-    if (job.cancelled) return;
-    stopJobGhost(job, true);
-    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '~$0.05');
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function doVideoSwapAkool() {
-  if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
-  setBtn('video', true, 'Starting…');
-  if (!await preflight(0)) { setBtn('video', false, 'Swap Face'); return; }
-  setBtn('video', false, 'Swap Face');
-  const t0 = Date.now();
-  const job = createJob('Video Swap · Akool');
-  const hasTrim = _vTrimEnd !== null && !(_vTrimStart === 0 && _vTrimEnd >= Math.floor(_vTrimDur));
-  const stepDefs = hasTrim
-    ? [{id:'trim',label:`Trimming (${fmtSec(_vTrimStart)}→${fmtSec(_vTrimEnd)})`},{id:'upload',label:'Uploading files'},{id:'swap',label:'Akool processing'}]
-    : [{id:'upload',label:'Uploading files'},{id:'swap',label:'Akool processing'}];
-  const steps = jobSteps(job, stepDefs);
-  if (hasTrim) markJobStep(job, steps, 'trim', 'active');
-  else markJobStep(job, steps, 'upload', 'active');
-  try {
-    const fileToSwap = await trimVideoIfNeeded(F['video-target'].file);
-    if (job.cancelled) return;
-    if (hasTrim) { markJobStep(job, steps, 'trim', 'done'); markJobStep(job, steps, 'upload', 'active'); }
-    const [videoUrl, faceUrl] = await Promise.all([
-      uploadFileXHR(fileToSwap, pct => setJobUploadPct(job, pct), 'uprog'),
-      uploadFileXHR(F['video-face'].file, null, null)
-    ]);
-    if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    markJobStep(job, steps, 'swap', 'active');
-    const clipDur = hasTrim ? (_vTrimEnd - _vTrimStart) : _vTrimDur || 30;
-    startJobGhost(job, Math.max(60, clipDur * 6 + 20) * 1000);
-    const body = {
-      sourceImage: [{ path: faceUrl }],
-      targetVideo: [{ path: videoUrl }],
-      face_enhance: !!pOpts.akool.faceEnhance
-    };
-    const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByVideo', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const d = await r.json();
-    if (!r.ok || d.code !== 1000) throw new Error(d?.msg || d?.message || `Akool HTTP ${r.status}`);
-    const jobId = d?.data?._id;
-    if (!jobId) throw new Error('No job ID from Akool');
-    const url = await pollAkool(jobId, job, steps, 'swap', true);
-    if (job.cancelled) return;
-    stopJobGhost(job, true);
-    const cost = clipDur ? '$'+(clipDur*0.05).toFixed(2) : '?';
-    showJobResult(job, url, true, Math.round((Date.now()-t0)/1000)+'s total', cost);
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function pollAkool(jobId, job, steps, stepId, isVideo) {
-  const deadline = Date.now() + 30 * 60 * 1000;
-  for (let i = 0; i < 600; i++) {
-    if (job.cancelled) throw new Error('Cancelled');
-    if (Date.now() > deadline) throw new Error('Akool took over 30 min — check akool.com.');
-    await sleep(3000);
-    if (job.cancelled) throw new Error('Cancelled');
-    let d;
-    try {
-      const r = await fetch(AKOOL + `/api/open/v4/faceswap/getInfo?_id=${jobId}`, {
-        headers: { 'Authorization': `Bearer ${apiKey()}` }
-      });
-      d = await r.json();
-    } catch(e) { continue; }
-    const status = d?.data?.faceswap_status;
-    const eta = document.getElementById(job.id + '-eta');
-    if (eta) {
-      if (status === 1) eta.textContent = 'Akool: queued…';
-      else if (status === 2) eta.textContent = 'Akool: processing…';
-    }
-    if (status === 3) {
-      const out = d?.data;
-      const url = out?.video_url || out?.url || out?.output_url || out?.result_url;
-      if (url) return url;
-      throw new Error('Akool completed but no output URL in response');
-    }
-    if (status === 4) throw new Error(d?.data?.error || 'Akool processing failed');
-  }
-  throw new Error('Akool polling limit reached');
-}
-
-// ─── Multi-Face Akool ─────────────────────────────────────────────────────────
-async function doMultiSwapImageAkool(idxs, t0) {
-  const job = createJob(`Multi-Face Swap · Akool (${idxs.length} face${idxs.length>1?'s':''})`);
-  const steps = jobSteps(job, [
-    {id:'upload', label:'Uploading images'},
-    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · Akool`}))
-  ]);
-  markJobStep(job, steps, 'upload', 'active');
-  startJobGhost(job, idxs.length * 50000);
-  try {
-    const faceUploads = await Promise.all(idxs.map(i => uploadFileXHR(mfAssigned[i].file, null, null)));
-    let currentUrl = await uploadFileXHR(F['multi-target'].file, null, null);
-    if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    for (let k = 0; k < idxs.length; k++) {
-      const i = idxs[k];
-      if (job.cancelled) return;
-      markJobStep(job, steps, 'f'+i, 'active');
-      const body = {
-        sourceImage: [{ path: faceUploads[k] }],
-        targetImage: [{ path: currentUrl }],
-        model_name: 'akool_faceswap_image_hq',
-        face_enhance: !!pOpts.akool.faceEnhance
-      };
-      const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByImage', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const d = await r.json();
-      if (!r.ok || d.code !== 1000) throw new Error(d?.msg || `Akool HTTP ${r.status}`);
-      const jobId = d?.data?._id;
-      if (!jobId) throw new Error('No job ID from Akool');
-      currentUrl = await pollAkool(jobId, job, steps, 'f'+i, false);
-      if (job.cancelled) return;
-    }
-    stopJobGhost(job, true);
-    showJobResult(job, currentUrl, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `~$${(idxs.length*0.05).toFixed(2)}`);
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function doMultiSwapVideoAkool(idxs, t0) {
-  const job = createJob(`Multi-Face Video · Akool (${idxs.length} face${idxs.length>1?'s':''})`);
-  const steps = jobSteps(job, [
-    {id:'upload', label:'Uploading files'},
-    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · Akool`}))
-  ]);
-  markJobStep(job, steps, 'upload', 'active');
-  try {
-    const faceUploads = await Promise.all(idxs.map(i => uploadFileXHR(mfAssigned[i].file, null, null)));
-    let currentVideoUrl = await uploadFileXHR(F['multi-target'].file, pct => setJobUploadPct(job, pct), 'mf-uprog');
-    if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    startJobGhost(job, Math.max(60, mfVideoDuration * 6 * idxs.length + 20) * 1000);
-    for (let k = 0; k < idxs.length; k++) {
-      const i = idxs[k];
-      if (job.cancelled) return;
-      markJobStep(job, steps, 'f'+i, 'active');
-      const body = {
-        sourceImage: [{ path: faceUploads[k] }],
-        targetVideo: [{ path: currentVideoUrl }],
-        face_enhance: !!pOpts.akool.faceEnhance
-      };
-      const r = await fetch(AKOOL + '/api/open/v4/faceswap/faceswapByVideo', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const d = await r.json();
-      if (!r.ok || d.code !== 1000) throw new Error(d?.msg || `Akool HTTP ${r.status}`);
-      const jobId = d?.data?._id;
-      if (!jobId) throw new Error('No job ID from Akool');
-      currentVideoUrl = await pollAkool(jobId, job, steps, 'f'+i, true);
-      if (job.cancelled) return;
-    }
-    stopJobGhost(job, true);
-    showJobResult(job, currentVideoUrl, true, Math.round((Date.now()-t0)/1000)+'s total', `~$${(idxs.length*mfVideoDuration*0.05).toFixed(2)}`);
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
 // ─── Photo Swap ───────────────────────────────────────────────────────────────
 async function doPhotoSwap() {
-  if (selectedProvider === 'piapi') return doPhotoSwapPiAPI();
-  if (selectedProvider === 'replicate') return doPhotoSwapReplicate();
-  if (selectedProvider === 'akool') return doPhotoSwapAkool();
   if (!F['photo-target'] || !F['photo-face']) { toast('Upload both images first'); return; }
   setBtn('photo', true, 'Starting\u2026');
   if (!await preflight(0.012)) { setBtn('photo', false, 'Swap Face'); return; }
@@ -2064,8 +1267,6 @@ async function doPhotoSwap() {
 
 // ─── Video Swap ───────────────────────────────────────────────────────────────
 async function doVideoSwap() {
-  if (selectedProvider === 'piapi') return doVideoSwapPiAPI();
-  if (selectedProvider === 'akool') return doVideoSwapAkool();
   if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
   setBtn('video', true, 'Starting\u2026');
   if (!await preflight(0.01)) { setBtn('video', false, 'Swap Face'); return; }
@@ -2109,211 +1310,81 @@ async function doVideoSwap() {
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
-// ─── Multi-Face Swap ──────────────────────────────────────────────────────────
-async function doMultiSwap() {
-  if (!F['multi-target']) { toast('Upload target first'); return; }
-  const idxs = Object.keys(mfAssigned).map(Number).sort((a,b) => a-b);
-  if (!idxs.length) { toast('Assign at least one source face photo first'); return; }
-  const minCost = mfIsVideo ? (mfVideoDuration * 0.01 * idxs.length) : (0.012 * idxs.length);
-  setBtn('multi', true, 'Starting\u2026');
-  if (!await preflight(minCost)) { setBtn('multi', false, 'Swap All Faces'); return; }
-  setBtn('multi', false, 'Swap All Faces');
+// ─── Image Builder (Seedream 4.5 multi-reference) ────────────────────────────
+function onRefsPick(files) {
+  const imgs = [...files].filter(f => f.type.startsWith('image/'));
+  const free = MAX_REFS - refs.length;
+  if (imgs.length > free) toast(`Max ${MAX_REFS} reference images — only the first ${free} were added.`);
+  imgs.slice(0, free).forEach(file => {
+    const r = new FileReader();
+    r.onload = e => { refs.push({file, dataUrl: e.target.result}); renderRefs(); };
+    r.readAsDataURL(file);
+  });
+}
+
+function removeRef(i, e) {
+  if (e) e.stopPropagation();
+  refs.splice(i, 1);
+  renderRefs();
+}
+
+function renderRefs() {
+  const grid = document.getElementById('ref-grid');
+  grid.innerHTML = refs.map((r, i) => `
+    <div class="ref-tile">
+      <img src="${r.dataUrl}" alt="">
+      <span class="ref-num">${i + 1}</span>
+      <button class="uz-rm" onclick="removeRef(${i},event)">&times;</button>
+    </div>`).join('') + (refs.length < MAX_REFS ? `
+    <div class="ref-tile ref-add" onclick="triggerFile('inp-refs')">
+      <span class="uz-icon">+</span>
+      <span class="uz-sub">${refs.length ? 'Add more' : 'Add images'}</span>
+    </div>` : '');
+  document.getElementById('ref-count').textContent = `${refs.length} / ${MAX_REFS}`;
+  checkBtns();
+}
+
+function initRefDrop() {
+  const grid = document.getElementById('ref-grid');
+  grid.addEventListener('dragover', e => { e.preventDefault(); grid.classList.add('drag'); });
+  grid.addEventListener('dragleave', () => grid.classList.remove('drag'));
+  grid.addEventListener('drop', e => { e.preventDefault(); grid.classList.remove('drag'); onRefsPick(e.dataTransfer.files); });
+}
+
+async function doCompose() {
+  const prompt = document.getElementById('compose-prompt').value.trim();
+  if (!refs.length || !prompt) { toast('Add at least one image and a prompt'); return; }
+  setBtn('compose', true, 'Starting…');
+  if (!await preflight(0.04)) { setBtn('compose', false, 'Build Image'); return; }
+  setBtn('compose', false, 'Build Image');
   const t0 = Date.now();
-  if (selectedProvider === 'piapi') {
-    if (mfIsVideo) await doMultiSwapVideoPiAPI(idxs, t0);
-    else           await doMultiSwapImagePiAPI(idxs, t0);
-    return;
-  }
-  if (selectedProvider === 'replicate') {
-    if (mfIsVideo) { toast('Replicate does not support video — switch to WaveSpeed or PiAPI for video.'); return; }
-    await doMultiSwapImageReplicate(idxs, t0);
-    return;
-  }
-  if (selectedProvider === 'akool') {
-    if (mfIsVideo) await doMultiSwapVideoAkool(idxs, t0);
-    else           await doMultiSwapImageAkool(idxs, t0);
-    return;
-  }
-  if (mfIsVideo) await doMultiSwapVideo(idxs, t0);
-  else           await doMultiSwapImage(idxs, t0);
-}
-
-async function doMultiSwapImage(idxs, t0) {
-  const job = createJob(`Multi-Face Swap (${idxs.length} face${idxs.length>1?'s':''})`);
-  const steps = jobSteps(job, idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`})));
-  startJobGhost(job, idxs.length * 22000);
-  let current = F['multi-target'].dataUrl;
-  try {
-    for (let k = 0; k < idxs.length; k++) {
-      const i = idxs[k];
-      if (job.cancelled) return;
-      markJobStep(job, steps, 'f'+i, 'active');
-      const d = await apiPost('/api/v3/wavespeed-ai/image-face-swap', {
-        image: current, face_image: mfAssigned[i].dataUrl,
-        target_index: i, output_format: 'jpeg', enable_sync_mode: false
-      });
-      const id = d?.data?.id; if (!id) throw new Error('No prediction ID for face ' + i);
-      const url = await poll(id, job, steps, 'f'+i);
-      if (job.cancelled) return;
-      current = (k < idxs.length - 1) ? await toBase64(url) : url;
-    }
-    stopJobGhost(job, true);
-    showJobResult(job, current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$'+(idxs.length*0.012).toFixed(3));
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function doMultiSwapVideo(idxs, t0) {
-  const job = createJob(`Multi-Face Video (${idxs.length} face${idxs.length>1?'s':''})`);
-  const steps = jobSteps(job, [
-    {id:'upload', label:'Uploading video'},
-    ...idxs.map(i => ({id:'f'+i, label:`Swapping face ${i}`}))
-  ]);
+  const snapshot = refs.slice();
+  const job = createJob(`Image Builder (${snapshot.length} ref${snapshot.length > 1 ? 's' : ''})`);
+  const steps = jobSteps(job, [{id:'upload', label:`Uploading ${snapshot.length} image${snapshot.length > 1 ? 's' : ''}`}, {id:'gen', label:'Seedream 4.5 is building'}]);
   markJobStep(job, steps, 'upload', 'active');
   try {
-    const origUrl = await uploadFileXHR(F['multi-target'].file, pct => setJobUploadPct(job, pct), 'mf-uprog');
+    const pcts = snapshot.map(() => 0);
+    const urls = await Promise.all(snapshot.map((r, i) => uploadFileXHR(r.file, p => {
+      pcts[i] = p; setJobUploadPct(job, pcts.reduce((a, b) => a + b, 0) / pcts.length);
+    })));
     if (job.cancelled) return;
     markJobStep(job, steps, 'upload', 'done');
-    startJobGhost(job, Math.max(30, mfVideoDuration * 5 * idxs.length + 20) * 1000);
-    let currentUrl = origUrl;
-    for (let k = 0; k < idxs.length; k++) {
-      const i = idxs[k];
-      if (job.cancelled) return;
-      markJobStep(job, steps, 'f'+i, 'active');
-      const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
-        video: currentUrl, face_image: mfAssigned[i].dataUrl, target_index: i
-      });
-      const id = d?.data?.id; if (!id) throw new Error('No prediction ID for face ' + i);
-      currentUrl = await poll(id, job, steps, 'f'+i);
-      if (job.cancelled) return;
-    }
-    stopJobGhost(job, true);
-    showJobResult(job, currentUrl, true, Math.round((Date.now()-t0)/1000)+'s total', '$'+(idxs.length*mfVideoDuration*0.01).toFixed(2));
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-// ─── Multi-Face PiAPI ─────────────────────────────────────────────────────────
-async function doMultiSwapImagePiAPI(idxs, t0) {
-  const job = createJob(`Multi-Face Swap · PiAPI (${idxs.length} face${idxs.length>1?'s':''})`);
-  const steps = jobSteps(job, idxs.map(i => ({id:'f'+i, label:`Face ${i} · PiAPI`})));
-  startJobGhost(job, idxs.length * 30000);
-  let current = F['multi-target'].dataUrl; // base64 for first pass
-  try {
-    for (let k = 0; k < idxs.length; k++) {
-      const i = idxs[k];
-      if (job.cancelled) return;
-      markJobStep(job, steps, 'f'+i, 'active');
-      const body = {
-        model: 'Qubico/image-toolkit', task_type: 'face-swap',
-        input: { target_image: current, swap_image: mfAssigned[i].dataUrl }
-      };
-      const r = await fetch(PROXY + '/piapi/api/v1/task', {
-        method: 'POST',
-        headers: { 'x-api-key': apiKey(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d?.message || `PiAPI HTTP ${r.status}`);
-      const taskId = d?.data?.task_id;
-      if (!taskId) throw new Error('No task ID from PiAPI');
-      const url = await pollPiAPI(taskId, job, steps, 'f'+i);
-      if (job.cancelled) return;
-      // Convert result URL to base64 for next iteration (except last)
-      current = (k < idxs.length - 1) ? await toBase64(url) : url;
-    }
-    stopJobGhost(job, true);
-    showJobResult(job, current, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `~$${(idxs.length*0.02).toFixed(2)}`);
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function doMultiSwapVideoPiAPI(idxs, t0) {
-  const job = createJob(`Multi-Face Video · PiAPI (${idxs.length} face${idxs.length>1?'s':''})`);
-  const steps = jobSteps(job, [
-    {id:'upload', label:'Uploading video'},
-    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · PiAPI`}))
-  ]);
-  markJobStep(job, steps, 'upload', 'active');
-  try {
-    const origUrl = await uploadFileXHR(F['multi-target'].file, pct => setJobUploadPct(job, pct), 'mf-uprog');
+    markJobStep(job, steps, 'gen', 'active');
+    startJobGhost(job, 35000);
+    const d = await apiPost('/api/v3/bytedance/seedream-v4.5/edit', {
+      prompt,
+      images: urls,
+      size: document.getElementById('sel-compose-size').value,
+      enable_sync_mode: false,
+      enable_base64_output: false
+    });
+    const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
+    const url = await poll(id, job, steps, 'gen');
     if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    startJobGhost(job, Math.max(60, mfVideoDuration * 6 * idxs.length + 20) * 1000);
-    let currentUrl = origUrl;
-    for (let k = 0; k < idxs.length; k++) {
-      const i = idxs[k];
-      if (job.cancelled) return;
-      markJobStep(job, steps, 'f'+i, 'active');
-      const body = {
-        model: 'Qubico/video-toolkit', task_type: 'face-swap',
-        input: { swap_image: mfAssigned[i].dataUrl, target_video: currentUrl, swap_faces_index: 0, target_faces_index: i }
-      };
-      const r = await fetch(PROXY + '/piapi/api/v1/task', {
-        method: 'POST',
-        headers: { 'x-api-key': apiKey(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d?.message || `PiAPI HTTP ${r.status}`);
-      const taskId = d?.data?.task_id;
-      if (!taskId) throw new Error('No task ID from PiAPI');
-      currentUrl = await pollPiAPI(taskId, job, steps, 'f'+i);
-      if (job.cancelled) return;
-    }
     stopJobGhost(job, true);
-    showJobResult(job, currentUrl, true, Math.round((Date.now()-t0)/1000)+'s total', `~$${(idxs.length*mfVideoDuration*0.01).toFixed(2)}`);
+    showJobResult(job, url, false, ((Date.now()-t0)/1000).toFixed(1)+'s', '$0.04');
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
-
-// ─── Multi-Face Replicate ─────────────────────────────────────────────────────
-async function doMultiSwapImageReplicate(idxs, t0) {
-  const model = pOpts.replicate.model || 'easel/advanced-face-swap';
-  const job = createJob(`Multi-Face Swap · Replicate (${idxs.length} face${idxs.length>1?'s':''})`);
-  const steps = jobSteps(job, [
-    {id:'upload', label:'Uploading images'},
-    ...idxs.map(i => ({id:'f'+i, label:`Face ${i} · Replicate`}))
-  ]);
-  markJobStep(job, steps, 'upload', 'active');
-  startJobGhost(job, idxs.length * 50000);
-  try {
-    // Upload all face images and the target image up front
-    const faceUploads = await Promise.all(idxs.map(i => uploadFileXHR(mfAssigned[i].file, null, null)));
-    let currentUrl = await uploadFileXHR(F['multi-target'].file, null, null);
-    if (job.cancelled) return;
-    markJobStep(job, steps, 'upload', 'done');
-    for (let k = 0; k < idxs.length; k++) {
-      const i = idxs[k];
-      if (job.cancelled) return;
-      markJobStep(job, steps, 'f'+i, 'active');
-      const input = { target_image: currentUrl, swap_image: faceUploads[k] };
-      if (pOpts.replicate.upscale) input.upscale = true;
-      if (pOpts.replicate.gender) input.user_gender = pOpts.replicate.gender;
-      const r = await fetch(PROXY + `/replicate/v1/models/${model}/predictions`, {
-        method: 'POST',
-        headers: { 'Authorization': `Token ${apiKey()}`, 'Content-Type': 'application/json', 'Prefer': 'wait' },
-        body: JSON.stringify({ input })
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d?.detail || d?.error || `Replicate HTTP ${r.status}`);
-      if (d.status === 'succeeded') {
-        currentUrl = Array.isArray(d.output) ? d.output[0] : d.output;
-      } else {
-        const predId = d?.id;
-        if (!predId) throw new Error('No prediction ID from Replicate');
-        currentUrl = await pollReplicate(predId, job, steps, 'f'+i);
-      }
-      if (job.cancelled) return;
-    }
-    stopJobGhost(job, true);
-    showJobResult(job, currentUrl, false, ((Date.now()-t0)/1000).toFixed(1)+'s', `~$${(idxs.length*0.003).toFixed(3)}`);
-  } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
-}
-
-async function toBase64(url) {
-  const r = await fetch(url);
-  const b = await r.blob();
-  return new Promise(res => { const fr = new FileReader(); fr.onload = e => res(e.target.result); fr.readAsDataURL(b); });
-}
-
-// (old single-panel result functions replaced by job system above)
 
 // ─── UI Helpers ───────────────────────────────────────────────────────────────
 function setBtn(which, loading, label) {
