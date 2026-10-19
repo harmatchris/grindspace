@@ -328,6 +328,18 @@ select:focus{border-color:var(--accent)}
 .credits{text-align:center;font-size:10px;color:var(--sub);opacity:.6;margin-top:8px}
 .credits a{color:inherit}
 
+.vm-group{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sub);margin:6px 2px 0}
+.vm-group:first-child{margin-top:0}
+.vm-group small{font-weight:500;letter-spacing:0;text-transform:none;opacity:.75;margin-left:4px}
+.ds-key-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.ds-key-row input{flex:1;min-width:0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:var(--text);font:inherit;font-size:12px;padding:9px 12px;outline:none}
+.ds-key-row input:focus{border-color:var(--accent-l)}
+.ds-key-row a{font-size:11px;color:var(--accent-l);white-space:nowrap}
+
+.vm-list.gm-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.gen-audio{margin-top:0;padding:7px 12px}
+@media(max-width:640px){.tab{font-size:11px;gap:4px}.tab svg{display:none}}
+
 /* ════════════════════════════════════════════════════════════════════════
    MODERN THEME — overrides the base styles above
    ════════════════════════════════════════════════════════════════════════ */
@@ -360,7 +372,7 @@ header::after{background:linear-gradient(90deg,transparent,rgba(168,85,247,.5) 3
 
 /* layout */
 main{max-width:1080px;padding:28px 20px 60px;gap:22px}
-.mode-tabs{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:5px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);max-width:560px;margin:0 auto;width:100%}
+.mode-tabs{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:5px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);max-width:720px;margin:0 auto;width:100%}
 .tab{border-radius:999px;padding:10px 0;font-size:13px}
 .tab.active{background:var(--grad);box-shadow:0 6px 22px rgba(168,85,247,.4)}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:22px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 30px 80px -40px rgba(0,0,0,.8)}
@@ -518,6 +530,10 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
       Photo Swap
     </button>
+    <button class="tab" data-tab="gen" onclick="switchTab('gen')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20"/></svg>
+      Video Generator
+    </button>
     <button class="tab" data-tab="video" onclick="switchTab('video')">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
       Video Swap
@@ -650,7 +666,7 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
         <div class="mf-head">
           <div>
             <div class="slabel">Multiple people?</div>
-            <div class="mf-hint">Pause the preview on a frame where everyone is visible, then detect.</div>
+            <div class="mf-hint" id="mf-hint">Pause the preview on a frame where everyone is visible, then detect.</div>
           </div>
           <button class="trim-btn" id="btn-detect" onclick="detectVideoFaces()">&#128269; Detect faces</button>
         </div>
@@ -674,6 +690,11 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
     <div>
       <div class="slabel" style="margin-bottom:8px">Model</div>
       <div class="vm-list" id="vm-list"></div>
+      <div class="ds-key-row" id="ds-key-row" style="display:none">
+        <input type="password" id="ds-key" placeholder="DeepSwap API key&hellip;" autocomplete="off" spellcheck="false"
+          oninput="dsKey=this.value.trim();localStorage.setItem('dsKey',dsKey)">
+        <a href="https://www.deepswap.ai/api-center" target="_blank" rel="noopener">Get key</a>
+      </div>
       <label class="hd-toggle">
         <span><b>HD Face</b><small>Sharpens the swapped face afterwards &middot; +1 token / s</small></span>
         <input type="checkbox" id="vm-hd" onchange="onVideoModelChange()"><i></i>
@@ -696,6 +717,60 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
       </button>
       <span class="tok-cost" id="video-tok-cost">&#129689; 1 token / second</span>
       <span class="cost-note" id="video-model-note"></span>
+    </div>
+  </div>
+
+  <!-- VIDEO GENERATOR (image → video, optional end frame) -->
+  <div class="panel" id="tab-gen">
+    <div class="upload-grid">
+      <div>
+        <div class="slabel" style="margin-bottom:8px">Start Frame</div>
+        <div class="upload-zone" id="uz-gen-start" onclick="triggerFile('inp-gen-start')">
+          <input type="file" id="inp-gen-start" accept="image/*" onchange="onFilePick(this,'gen-start')">
+          <div id="ph-gen-start-empty">
+            <div class="uz-icon">&#127916;</div>
+            <div class="uz-title">Drop start image</div>
+            <div class="uz-sub">First frame of the video</div>
+          </div>
+          <div id="ph-gen-start-filled" style="display:none;width:100%"></div>
+        </div>
+      </div>
+      <div>
+        <div class="slabel" style="margin-bottom:8px">End Frame <span class="ref-count">optional</span></div>
+        <div class="upload-zone" id="uz-gen-end" onclick="triggerFile('inp-gen-end')">
+          <input type="file" id="inp-gen-end" accept="image/*" onchange="onFilePick(this,'gen-end')">
+          <div id="ph-gen-end-empty">
+            <div class="uz-icon">&#127937;</div>
+            <div class="uz-title">Drop end image (optional)</div>
+            <div class="uz-sub">The video ends on this frame</div>
+          </div>
+          <div id="ph-gen-end-filled" style="display:none;width:100%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ref-hint" style="margin-top:-6px">Tip: images from the Image Builder have &ldquo;Use as start / end frame&rdquo; buttons.</div>
+    <div>
+      <div class="slabel" style="margin-bottom:8px">What should happen?</div>
+      <textarea id="gen-prompt" class="compose-prompt" rows="3" oninput="checkBtns()"
+        placeholder="e.g. The athlete swings from the salmon ladder, releases and catches the next bar, crowd cheering, slow-motion at the catch"></textarea>
+    </div>
+    <div>
+      <div class="slabel" style="margin-bottom:8px">Model <span class="ref-count">cheapest &rarr; best</span></div>
+      <div class="vm-list gm-list" id="gm-list"></div>
+    </div>
+    <div class="ctrl-row">
+      <div class="sel-wrap"><label>Length:</label><select id="gen-dur" onchange="updateGenCost()"></select></div>
+      <div class="sel-wrap" id="gen-res-wrap"><label>Quality:</label><select id="gen-res" onchange="updateGenCost()"></select></div>
+      <div class="sel-wrap" id="gen-aspect-wrap"><label>Format:</label><select id="gen-aspect" onchange="updateGenCost()"><option value="9:16">9:16 Reel</option><option value="16:9">16:9 Wide</option></select></div>
+      <label class="hd-toggle gen-audio" id="gen-audio-wrap"><span><b>Sound</b></span><input type="checkbox" id="gen-audio" onchange="updateGenCost()"><i></i></label>
+    </div>
+    <div class="ctrl-row">
+      <button class="btn-swap" id="btn-gen" onclick="doGenerate()" disabled>
+        <svg id="btn-gen-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>
+        <span id="btn-gen-lbl">Generate Video</span>
+      </button>
+      <span class="tok-cost" id="gen-cost">&#129689; 0 tokens</span>
+      <span class="cost-note" id="gen-note"></span>
     </div>
   </div>
 
@@ -727,6 +802,8 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
         <span>Video Head Swap 480p / 720p</span><b>4 / 8 per s</b>
         <span>Video Body Swap</span><b>8 / s</b>
         <span>HD Face (add-on)</span><b>+1 / s</b>
+        <span>Video Generator</span><b>8&ndash;450 per 5 s, by model</b>
+        <span>DeepSwap models</span><b>DeepSwap credits</b>
         <span style="grid-column:1/-1;opacity:.7">Video: min. 3 s billed. Head &amp; Body Swap capped at 120 s.</span>
       </div>
     </div>
@@ -892,8 +969,15 @@ const VIDEO_MODELS = {
   face:     { name: 'Face Swap',      tag: 'Keeps head shape · fastest',   path: 'wavespeed-ai/video-face-swap', rate: 1, cap: Infinity, est: 6 },
   head480:  { name: 'Head Swap 480p', tag: 'Swaps whole head incl. hair',       path: 'wavespeed-ai/video-head-swap', rate: 4, cap: 120, est: 10, resolution: '480p' },
   head720:  { name: 'Head Swap 720p', tag: 'Whole head, sharper',               path: 'wavespeed-ai/video-head-swap', rate: 8, cap: 120, est: 14, resolution: '720p' },
-  body:     { name: 'Body Swap',      tag: 'Puts your face on the body video',  path: 'wavespeed-ai/video-body-swap', rate: 8, cap: 120, est: 15 }
+  body:     { name: 'Body Swap',      tag: 'Puts your face on the body video',  path: 'wavespeed-ai/video-body-swap', rate: 8, cap: 120, est: 15 },
+  // DeepSwap's own models (own API key, billed in DeepSwap credits, not in tokens)
+  dsKeeper: { name: 'ShapeKeeper',          tag: 'Keeps the face shape of the video',      provider: 'deepswap', ds: 'shapekeeper1.0-fs',      rate: 0, cap: Infinity, est: 4 },
+  dsT20:    { name: 'ShapeTransformer 2.0', tag: 'Takes the shape of the new face',        provider: 'deepswap', ds: 'shapetransformer2.0-fs', rate: 0, cap: Infinity, est: 4 },
+  dsT31:    { name: 'ShapeTransformer 3.1', tag: 'Higher similarity, complex scenes',      provider: 'deepswap', ds: 'shapetransformer3.1-fs', rate: 0, cap: Infinity, est: 5 },
+  dsFusion: { name: 'ShapeFusion',          tag: 'New face shape, most natural (newest)',  provider: 'deepswap', ds: 'shapefusion1.0-fs',      rate: 0, cap: Infinity, est: 5 }
 };
+const isDS = (k = videoModel) => VIDEO_MODELS[k]?.provider === 'deepswap';
+const supportsMulti = (k = videoModel) => k === 'face' || isDS(k);
 const HD_RATE = 1;
 let videoModel = localStorage.getItem('gs_vmodel');
 if (!VIDEO_MODELS[videoModel]) videoModel = 'face';
@@ -903,6 +987,7 @@ function billedSec(sec, cap = Infinity) { return Math.min(cap, Math.max(3, Math.
 // Multi-face = one Face Swap pass per assigned person
 function videoTokens(sec, model = videoModel, hd = document.getElementById('vm-hd')?.checked, passes = videoPasses(model)) {
   const m = VIDEO_MODELS[model];
+  if (m.provider === 'deepswap') return 0; // paid with DeepSwap credits
   return billedSec(sec, m.cap) * m.rate * passes + (hd ? billedSec(sec) * HD_RATE : 0);
 }
 function videoPasses(model = videoModel) { return model === 'face' ? Math.max(1, mfCount()) : 1; }
@@ -999,10 +1084,11 @@ function doTopUp() {
 // ─── Learned processing speed (makes the ghost progress bar honest) ─────────
 function getSpeed() { try { return JSON.parse(localStorage.getItem(SPEED_KEY)) || {}; } catch (e) { return {}; } }
 // Video: seconds of processing per second of clip. Others: seconds per job.
-function estimateMs(kind, clipSec, defRatio = 6) {
+// def = fallback before anything was learned (video: s per clip-second, else: s per job)
+function estimateMs(kind, clipSec, def) {
   const sp = getSpeed();
-  if (kind.startsWith('video')) return Math.max(30, 20 + (clipSec || 10) * (sp[kind] ?? defRatio)) * 1000;
-  return (sp[kind] ?? (kind === 'compose' ? 35 : 20)) * 1000;
+  if (kind.startsWith('video')) return Math.max(30, 20 + (clipSec || 10) * (sp[kind] ?? def ?? 6)) * 1000;
+  return (sp[kind] ?? def ?? (kind === 'compose' ? 35 : 20)) * 1000;
 }
 function recordSpeed(kind, ms, clipSec) {
   const sp = getSpeed();
@@ -1234,8 +1320,13 @@ function showJobResult(job, url, isVid, time, cost) {
     const meta    = document.getElementById(job.id + '-meta');
     if (med) { med.style.display = 'block'; med.innerHTML = isVid ? `<video src="${url}" controls autoplay loop muted playsinline></video>` : `<img src="${url}" alt="result">`; }
     if (dl)      { dl.onclick = () => downloadResult(url, isVid ? 'grindspace.mp4' : 'grindspace.jpg'); }
-    if (actions) actions.style.display = 'flex';
-    if (meta)    meta.innerHTML = `<span>&#9201; ${time}</span><span>&#129689; ${cost}</span>`;
+    if (actions) {
+      actions.style.display = 'flex';
+      if (!isVid && !actions.querySelector('.btn-frame')) actions.insertAdjacentHTML('beforeend',
+        `<button class="job-dismiss btn-frame" onclick="useAsFrame('gen-start','${url}')">&#127916; Use as start frame</button>
+         <button class="job-dismiss btn-frame" onclick="useAsFrame('gen-end','${url}')">&#127937; Use as end frame</button>`);
+    }
+    if (meta)    meta.innerHTML = `<span>&#9201; ${time}</span><span>${/token/.test(cost) ? '&#129689; ' : ''}${cost}</span>`;
   }, 1000);
 }
 
@@ -1311,7 +1402,7 @@ function onFilePick(input, key) {
 function afterLoad(key, file, dataUrl) {
   showPreview(key, file, dataUrl);
   if (/-face$/.test(key) && !F[key]?.fromLib) libAdd(file);
-  if (key === 'video-target') resetMF();
+  if (key === 'video-target') { dsMaterial = null; resetMF(); }
   if (key === 'video-target') { loadVideoDuration(file, dataUrl, 'video-info', 'video-cost', 'video-meta', null); initVideoTrimUI(dataUrl); }
   checkBtns();
 }
@@ -1346,7 +1437,7 @@ function removeFile(key, e) {
   if (filled) { filled.style.display = 'none'; filled.innerHTML = ''; }
   if (uz) uz.classList.remove('has-file');
   if (inp) inp.value = '';
-  if (key === 'video-target') { document.getElementById('video-meta').style.display = 'none'; hideVideoTrimUI(); resetMF(); }
+  if (key === 'video-target') { document.getElementById('video-meta').style.display = 'none'; hideVideoTrimUI(); dsMaterial = null; resetMF(); }
   checkBtns();
 }
 
@@ -1398,7 +1489,7 @@ function setTrim(s, e, edge) {
   document.getElementById('trim-info-text').textContent = full
     ? `Full video (${len.toFixed(1)}s)`
     : `Selected ${len.toFixed(1)}s of ${_vTrimDur.toFixed(1)}s`;
-  document.getElementById('trim-cost-badge').textContent = `\u{1FA99} ${videoTokens(len)} tokens`;
+  document.getElementById('trim-cost-badge').textContent = isDS() ? 'DeepSwap credits' : `\u{1FA99} ${videoTokens(len)} tokens`;
   document.getElementById('trim-rec-note').style.display = full ? 'none' : 'block';
   const vidEl = document.getElementById('trim-preview-vid');
   if (edge && vidEl.paused) vidEl.currentTime = edge === 'e' ? Math.max(s, e - 0.05) : s;
@@ -1579,7 +1670,7 @@ function loadVideoDuration(file, dataUrl, infoId, costId, metaId, cb) {
     const t = videoTokens(v.duration);
     document.getElementById(infoId).textContent = `${s}s \u2014 ${fmtBytes(file.size)}`;
     const ce = document.getElementById(costId);
-    ce.textContent = `full video: ${t} tokens`;
+    ce.textContent = isDS() ? 'billed in DeepSwap credits' : `full video: ${t} tokens`;
     ce.className = 'cost-note' + (t > 200 ? ' warn' : '');
     document.getElementById(metaId).style.display = 'flex';
     if (cb) cb(v.duration);
@@ -1591,7 +1682,9 @@ function checkBtns() {
   const prompt = (document.getElementById('compose-prompt')?.value || '').trim();
   document.getElementById('btn-compose').disabled = !(refs.length && prompt && k);
   document.getElementById('btn-photo').disabled = !(F['photo-target'] && F['photo-face'] && k);
-  document.getElementById('btn-video').disabled = !(F['video-target'] && (F['video-face'] || (videoModel === 'face' && mfCount())) && k);
+  const gp = (document.getElementById('gen-prompt')?.value || '').trim();
+  document.getElementById('btn-gen').disabled = !(F['gen-start'] && gp && k);
+  document.getElementById('btn-video').disabled = !(F['video-target'] && (F['video-face'] || (supportsMulti() && mfCount())) && k);
 }
 
 // ─── Drag & Drop ──────────────────────────────────────────────────────────────
@@ -1940,6 +2033,7 @@ function resetMF() {
 }
 
 async function detectVideoFaces() {
+  if (isDS()) return dsAnalyze();
   const v = document.getElementById('trim-preview-vid');
   if (!v.videoWidth) { toast('Load a video first'); return; }
   v.pause();
@@ -1964,7 +2058,7 @@ async function detectVideoFaces() {
   } catch (e) {
     toast('❌ ' + e.message);
   } finally {
-    btn.disabled = false; btn.innerHTML = '&#128269; Detect faces';
+    btn.disabled = false; onVideoModelChange();
   }
 }
 
@@ -1987,16 +2081,21 @@ function clearMF(idx) { delete mfAssign[idx]; renderMF(); }
 
 // ─── Video model picker ──────────────────────────────────────────────────────
 function renderVideoModels() {
-  document.getElementById('vm-list').innerHTML = Object.entries(VIDEO_MODELS).map(([k, m]) => `
+  const card = ([k, m]) => `
     <button class="vm-card${k === videoModel ? ' active' : ''}" onclick="setVideoModel('${k}')">
       <span class="vm-name">${m.name}</span>
       <span class="vm-tag">${m.tag}</span>
-      <span class="vm-rate">${m.rate} token${m.rate > 1 ? 's' : ''} / s</span>
-    </button>`).join('');
+      <span class="vm-rate">${m.provider === 'deepswap' ? 'credits' : `${m.rate} token${m.rate > 1 ? 's' : ''} / s`}</span>
+    </button>`;
+  const all = Object.entries(VIDEO_MODELS);
+  document.getElementById('vm-list').innerHTML =
+    '<div class="vm-group">WaveSpeed</div>' + all.filter(([, m]) => !m.provider).map(card).join('') +
+    '<div class="vm-group">DeepSwap <small>own key &middot; DeepSwap credits</small></div>' + all.filter(([, m]) => m.provider === 'deepswap').map(card).join('');
 }
 
 function setVideoModel(k) {
-  videoModel = k;
+  // Detected faces belong to one provider (face-api index vs DeepSwap face id)
+  if (isDS(k) !== isDS(videoModel)) { videoModel = k; resetMF(); }
   localStorage.setItem('gs_vmodel', k);
   renderVideoModels();
   onVideoModelChange();
@@ -2005,13 +2104,19 @@ function setVideoModel(k) {
 function onVideoModelChange() {
   const m = VIDEO_MODELS[videoModel];
   const hd = document.getElementById('vm-hd').checked;
-  const multi = videoModel === 'face' && mfCount() > 0;
+  const multi = supportsMulti() && mfCount() > 0;
   document.getElementById('video-idx-wrap').style.display = videoModel === 'face' && !multi ? '' : 'none';
-  document.getElementById('mf-box').style.display = videoModel === 'face' && F['video-target'] ? '' : 'none';
+  document.getElementById('mf-box').style.display = supportsMulti() && F['video-target'] ? '' : 'none';
+  document.getElementById('ds-key-row').style.display = isDS() ? '' : 'none';
+  const det = document.getElementById('btn-detect');
+  if (det && !det.disabled) det.innerHTML = isDS() ? '&#128269; Analyze with DeepSwap' : '&#128269; Detect faces';
+  document.getElementById('mf-hint').textContent = isDS()
+    ? 'DeepSwap finds every face in the selected part (about 20 s). Then assign a portrait to each.'
+    : 'Pause the preview on a frame where everyone is visible, then detect.';
   document.getElementById('vid-face-lbl').textContent = multi ? 'Source Face (not needed: people assigned above)' : 'Source Face';
-  document.getElementById('video-tok-cost').innerHTML = `&#129689; ${m.rate + (hd ? HD_RATE : 0)} token${m.rate + (hd ? HD_RATE : 0) > 1 ? 's' : ''} / second`;
+  document.getElementById('video-tok-cost').innerHTML = isDS() ? 'DeepSwap credits' : `&#129689; ${m.rate + (hd ? HD_RATE : 0)} token${m.rate + (hd ? HD_RATE : 0) > 1 ? 's' : ''} / second`;
   document.getElementById('video-model-note').textContent = (multi ? `${mfCount()} people \u00d7 ` : '') + m.name + (hd ? ' + HD Face' : '') + (m.cap < Infinity ? ` \u00b7 billed max. ${m.cap}s` : '');
-  document.getElementById('btn-video-lbl').textContent = videoModel === 'face' ? 'Swap Face' : videoModel === 'body' ? 'Swap Body' : 'Swap Head';
+  document.getElementById('btn-video-lbl').textContent = videoModel === 'body' ? 'Swap Body' : videoModel.startsWith('head') ? 'Swap Head' : 'Swap Face';
   if (_vTrimDur) setTrim(_vTrimStart, _vTrimEnd);
   const vf = F['video-target'];
   if (vf) loadVideoDuration(vf.file, vf.dataUrl, 'video-info', 'video-cost', 'video-meta', null);
@@ -2019,6 +2124,7 @@ function onVideoModelChange() {
 
 // ─── Video Swap ───────────────────────────────────────────────────────────────
 async function doVideoSwap() {
+  if (isDS()) return doVideoSwapDeepSwap();
   const mKey = videoModel, m = VIDEO_MODELS[mKey];
   const multi = mKey === 'face' && mfCount() > 0;
   if (!F['video-target'] || !(F['video-face'] || multi)) { toast('Upload both files first'); return; }
@@ -2117,6 +2223,278 @@ async function doVideoSwap() {
       showJobResult(job, url, true, fmtDur((Date.now()-t0)/1000)+' total', `${cost - back} tokens (partial)`);
     } else { stopJobGhost(job, false); jobError(job, e.message); }
   }
+}
+
+// ─── DeepSwap API (own key, own credits) ─────────────────────────────────────
+// Flow: upload clip → "material" (DeepSwap detects every face) → task with
+// faceMappings (detected face id → new portrait URL) → poll task.
+const DS_API = 'https://api.deepswap.ai/fs';
+let dsKey = localStorage.getItem('dsKey') || '';
+let dsMaterial = null; // { id, sel, faces:[{id,url}] } for the current file + selection
+
+async function dsFetch(path, body) {
+  if (!dsKey) throw new Error('No DeepSwap API key entered');
+  // IDs are 64-bit integers: keep them as raw digits, JS numbers would round them
+  const json = body && JSON.stringify(body).replace(/"(materialId|sourceFaceId)":"(\d+)"/g, '"$1":$2');
+  const r = await fetch(DS_API + path, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Authorization': `Bearer ${dsKey}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: json
+  });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401) throw new Error('DeepSwap: invalid API key');
+  if (!r.ok || d.errorCode) throw new Error('DeepSwap: ' + (d.errorMsg || d.errorCode || `HTTP ${r.status}`));
+  return d;
+}
+
+// Polls a DeepSwap material or task until it is done.
+async function dsWait(path, job, doneKey, maxMin = 35) {
+  const deadline = Date.now() + maxMin * 60000;
+  while (Date.now() < deadline) {
+    if (job?.cancelled) throw new Error('Cancelled');
+    await sleep(3000);
+    let d;
+    try { d = await dsFetch(path); } catch (e) { if (/invalid API key/.test(e.message)) throw e; continue; }
+    const st = d.status || d.taskStatus;
+    if (job) job.status = st === 'PENDING' ? 'queued' : 'processing';
+    if (st === 'SUCCEEDED') return d;
+    if (st === 'FAILED') throw new Error('DeepSwap: ' + (d.errorMsg || d.errorCode || 'failed'));
+  }
+  throw new Error('DeepSwap took too long');
+}
+
+function dsSelKey() {
+  const f = F['video-target']?.file;
+  return f ? [f.name, f.size, isFullClip() ? 'full' : _vTrimStart.toFixed(1) + '-' + _vTrimEnd.toFixed(1)].join('|') : '';
+}
+
+// Uploads the selected part and lets DeepSwap find the faces in it.
+async function dsAnalyze() {
+  if (!F['video-target']) { toast('Load a video first'); return null; }
+  if (!dsKey) { toast('Enter your DeepSwap API key first'); document.getElementById('ds-key').focus(); return null; }
+  if (!apiKey()) { toast('The WaveSpeed key is still needed to upload files'); return null; }
+  const btn = document.getElementById('btn-detect');
+  btn.disabled = true; btn.textContent = 'Analyzing…';
+  const job = createJob('DeepSwap face analysis');
+  const steps = jobSteps(job, [
+    ...(isFullClip() ? [] : [{id:'trim', label:'Cutting clip'}]),
+    {id:'upload', label:'Uploading video'}, {id:'faces', label:'DeepSwap is finding faces'}
+  ]);
+  try {
+    let file = F['video-target'].file;
+    if (!isFullClip()) {
+      markJobStep(job, steps, 'trim', 'active');
+      file = await trimVideoIfNeeded(file, f => setJobUploadPct(job, f, 0, 25, 'Cutting clip'), job);
+      if (job.cancelled) return null;
+      markJobStep(job, steps, 'trim', 'done');
+    }
+    markJobStep(job, steps, 'upload', 'active');
+    const url = await uploadFileXHR(file, f => setJobUploadPct(job, f, isFullClip() ? 0 : 25, 45));
+    if (job.cancelled) return null;
+    markJobStep(job, steps, 'upload', 'done');
+    markJobStep(job, steps, 'faces', 'active');
+    startJobGhost(job, estimateMs('ds:analyze', 0, 22), 45);
+    const t = Date.now();
+    const m = await dsFetch('/openapi/v1/face-swap/materials', { url });
+    const d = await dsWait(`/openapi/v1/face-swap/materials/${m.materialId}`, job);
+    recordSpeed('ds:analyze', Date.now() - t);
+    markJobStep(job, steps, 'faces', 'done');
+    dsMaterial = { id: String(d.materialId || m.materialId), sel: dsSelKey(), faces: d.faces || [] };
+    mfFaces = dsMaterial.faces.map((f, i) => ({ idx: i, dsId: String(f.id), thumb: f.url }));
+    mfAssign = {};
+    renderMF();
+    stopJobGhost(job, true);
+    removeJob(job.id);
+    toast(mfFaces.length
+      ? `DeepSwap found ${mfFaces.length} face${mfFaces.length > 1 ? 's' : ''}. The same person can show up more than once (different angles) — assign the portrait to each of them.`
+      : 'DeepSwap found no faces in this part of the video.');
+    return dsMaterial;
+  } catch (e) {
+    if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); }
+    return null;
+  } finally {
+    btn.disabled = false; onVideoModelChange();
+  }
+}
+
+async function doVideoSwapDeepSwap() {
+  const mKey = videoModel, m = VIDEO_MODELS[mKey];
+  if (!dsKey) { toast('Enter your DeepSwap API key first'); document.getElementById('ds-key').focus(); return; }
+  if (!dsMaterial || dsMaterial.sel !== dsSelKey()) {
+    // Selection is new or changed: let DeepSwap find the faces first
+    const mat = await dsAnalyze();
+    if (!mat) return;
+    if (!(mat.faces.length === 1 && F['video-face'])) {
+      if (mat.faces.length) toast('Now assign a portrait to the faces DeepSwap found, then press Swap again.');
+      return;
+    }
+  }
+  // Mappings: assigned people, or the single Source Face onto the only face found
+  let pairs = Object.keys(mfAssign).map(Number).map(i => ({ dsId: mfFaces[i].dsId, blob: mfAssign[i].blob, name: mfAssign[i].name }));
+  if (!pairs.length) {
+    if (dsMaterial.faces.length !== 1 || !F['video-face']) { toast('Assign a portrait to at least one detected face'); return; }
+    pairs = [{ dsId: String(dsMaterial.faces[0].id), blob: F['video-face'].file, name: 'Source face' }];
+  }
+  const hd = document.getElementById('vm-hd').checked;
+  const t0 = Date.now();
+  const job = createJob(`DeepSwap ${m.name}${hd ? ' + HD' : ''} (${pairs.length} face${pairs.length > 1 ? 's' : ''})`);
+  const steps = jobSteps(job, [{id:'faces', label:'Uploading portraits'}, {id:'swap', label:`${m.name} running at DeepSwap`}]);
+  markJobStep(job, steps, 'faces', 'active');
+  try {
+    // Same portrait for several detected faces is uploaded only once
+    const urlByBlob = new Map();
+    for (const p of pairs) if (!urlByBlob.has(p.blob)) urlByBlob.set(p.blob, null);
+    let n = 0;
+    for (const b of urlByBlob.keys()) {
+      const f = b instanceof File ? b : new File([b], 'face.jpg', { type: 'image/jpeg' });
+      urlByBlob.set(b, await uploadFileXHR(f, x => setJobUploadPct(job, (n + x) / urlByBlob.size, 0, 20, 'Uploading portraits')));
+      n++;
+      if (job.cancelled) return;
+    }
+    markJobStep(job, steps, 'faces', 'done');
+    markJobStep(job, steps, 'swap', 'active');
+    const clipSec = clipSeconds() || 10;
+    startJobGhost(job, estimateMs('video:' + mKey, clipSec, m.est), 20);
+    const tSwap = Date.now();
+    const task = await dsFetch('/openapi/v1/face-swap/tasks', {
+      model: m.ds,
+      materialId: dsMaterial.id,
+      faceMappings: pairs.map(p => ({ sourceFaceId: p.dsId, targetFaceUrl: urlByBlob.get(p.blob) })),
+      faceEnhance: hd
+    });
+    if (!task.taskId) throw new Error('DeepSwap: no task ID');
+    const d = await dsWait(`/openapi/v1/tasks/${task.taskId}`, job);
+    if (job.cancelled) return;
+    if (!d.videoUrl) throw new Error('DeepSwap: finished but no video URL');
+    recordSpeed('video:' + mKey, Date.now() - tSwap, clipSec);
+    job.settled = true;
+    stopJobGhost(job, true);
+    showJobResult(job, d.videoUrl, true, fmtDur((Date.now() - t0) / 1000) + ' total', 'DeepSwap credits');
+  } catch (e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
+}
+
+// ─── Video Generator (image → video, optional end frame) ────────────────────
+// rate = $ per second per resolution. audio: factor (×) or add ($/s). Prices from WaveSpeed docs.
+const GEN_MODELS = {
+  sd1lite: { name: 'Seedance 1 Lite',     tag: 'Cheapest · 480p · good for drafts',  path: 'bytedance/seedance-v1-lite-i2v-480p',            durations: [3, 5, 8, 10, 12], res: { '480p': 0.016 }, est: 60 },
+  wan22:   { name: 'Wan 2.2',             tag: 'Cheap · 480p · smooth motion',       path: 'wavespeed-ai/wan-2.2/i2v-480p',                 durations: [5, 8],            res: { '480p': 0.03 },  est: 90 },
+  kling25: { name: 'Kling 2.5 Turbo Pro', tag: 'Best value for action · 1080p',         path: 'kwaivgi/kling-v2.5-turbo-pro/image-to-video',   durations: [5, 10],           res: { '1080p': 0.07 }, est: 120 },
+  kling30: { name: 'Kling 3.0',           tag: 'Newer Kling · optional sound',          path: 'kwaivgi/kling-v3.0-std/image-to-video',         durations: [3, 5, 8, 10, 15], res: { '1080p': 0.084 }, audio: { key: 'sound', factor: 1.5 }, est: 150 },
+  sd20f:   { name: 'Seedance 2.0 Fast',   tag: 'Strong motion · native audio',          path: 'bytedance/seedance-2.0-fast/image-to-video',    durations: [4, 5, 8, 10, 15], res: { '480p': 0.10, '720p': 0.20, '1080p': 0.50 }, resParam: true, audio: { key: 'generate_audio', factor: 1 }, est: 120 },
+  veo31f:  { name: 'Veo 3.1 Fast',        tag: 'Google · very realistic · audio',  path: 'google/veo3.1-fast/image-to-video',             durations: [4, 6, 8],         res: { '720p': 0.10, '1080p': 0.10 }, resParam: true, audio: { key: 'generate_audio', add: 0.05 }, aspect: ['16:9', '9:16'], est: 120 },
+  sd25:    { name: 'Seedance 2.5',        tag: 'Top quality · up to 4K',                path: 'bytedance/seedance-2.5/image-to-video',         durations: [4, 5, 8, 10, 15], res: { '480p': 0.18, '720p': 0.36, '1080p': 0.90 }, resParam: true, audio: { key: 'generate_audio', factor: 1 }, est: 180 }
+};
+let genModel = localStorage.getItem('gs_gmodel');
+if (!GEN_MODELS[genModel]) genModel = 'kling25';
+
+function genOpts() {
+  const m = GEN_MODELS[genModel];
+  const dur = parseInt(document.getElementById('gen-dur').value) || m.durations[0];
+  const res = document.getElementById('gen-res').value || Object.keys(m.res)[0];
+  const audio = !!m.audio && document.getElementById('gen-audio').checked;
+  return { m, dur, res, audio };
+}
+function genTokens() {
+  const { m, dur, res, audio } = genOpts();
+  let perSec = m.res[res] ?? Object.values(m.res)[0];
+  if (audio) perSec = perSec * (m.audio.factor || 1) + (m.audio.add || 0);
+  return Math.ceil(perSec * dur * 100 - 1e-9);
+}
+
+function renderGenModels() {
+  document.getElementById('gm-list').innerHTML = Object.entries(GEN_MODELS).map(([k, m]) => {
+    const from = Math.ceil(Math.min(...Object.values(m.res)) * 5 * 100 - 1e-9);
+    return `
+    <button class="vm-card${k === genModel ? ' active' : ''}" onclick="setGenModel('${k}')">
+      <span class="vm-name">${m.name}</span>
+      <span class="vm-tag">${m.tag}</span>
+      <span class="vm-rate">from ${from} / 5 s</span>
+    </button>`;
+  }).join('');
+}
+
+function setGenModel(k) {
+  genModel = k;
+  localStorage.setItem('gs_gmodel', k);
+  const m = GEN_MODELS[k];
+  const durEl = document.getElementById('gen-dur');
+  const prevDur = parseInt(durEl.value);
+  durEl.innerHTML = m.durations.map(d => `<option value="${d}"${d === (m.durations.includes(prevDur) ? prevDur : (m.durations.includes(5) ? 5 : m.durations[0])) ? ' selected' : ''}>${d} s</option>`).join('');
+  const resEl = document.getElementById('gen-res');
+  const resKeys = Object.keys(m.res);
+  resEl.innerHTML = resKeys.map(r => `<option value="${r}"${r === '720p' ? ' selected' : ''}>${r}</option>`).join('');
+  document.getElementById('gen-res-wrap').style.display = resKeys.length > 1 ? '' : 'none';
+  document.getElementById('gen-aspect-wrap').style.display = m.aspect ? '' : 'none';
+  document.getElementById('gen-audio-wrap').style.display = m.audio ? '' : 'none';
+  renderGenModels();
+  updateGenCost();
+}
+
+function updateGenCost() {
+  const { m, dur, res } = genOpts();
+  document.getElementById('gen-cost').innerHTML = `&#129689; ${genTokens()} tokens`;
+  document.getElementById('gen-note').textContent = `${m.name} · ${dur} s${Object.keys(m.res).length > 1 ? ' · ' + res : ''}`;
+  checkBtns();
+}
+
+// Image Builder results → start/end frame of the Video Generator
+function useAsFrame(key, url) {
+  const name = key === 'gen-start' ? 'start-frame.jpg' : 'end-frame.jpg';
+  F[key] = { remote: url, dataUrl: url, file: { name, type: 'image/jpeg', size: 0 } };
+  showPreview(key, F[key].file, url);
+  switchTab('gen');
+  checkBtns();
+  toast(key === 'gen-start' ? 'Set as start frame' : 'Set as end frame');
+}
+
+async function frameUrl(key, job, from, to) {
+  const f = F[key];
+  if (!f) return null;
+  if (f.remote) return f.remote;
+  return uploadFileXHR(f.file, x => setJobUploadPct(job, x, from, to, 'Uploading frames'));
+}
+
+async function doGenerate() {
+  const prompt = document.getElementById('gen-prompt').value.trim();
+  if (!F['gen-start'] || !prompt) { toast('Add a start image and describe the motion'); return; }
+  const { m, dur, res, audio } = genOpts();
+  const mKey = genModel;
+  const cost = genTokens();
+  if (getTokens() < cost) { spendTokens(null, cost); return; }
+  setBtn('gen', true, 'Starting…');
+  if (!await preflight(cost * 0.01)) { setBtn('gen', false, 'Generate Video'); return; }
+  setBtn('gen', false, 'Generate Video');
+  const t0 = Date.now();
+  const hasEnd = !!F['gen-end'];
+  const title = `${m.name} · ${dur} s${hasEnd ? ' · start + end' : ''}`;
+  const job = createJob(title);
+  if (!spendTokens(job, cost, title)) { removeJob(job.id); return; }
+  const steps = jobSteps(job, [{id:'upload', label:'Uploading frames'}, {id:'gen', label:`${m.name} is generating`}]);
+  markJobStep(job, steps, 'upload', 'active');
+  try {
+    const image = await frameUrl('gen-start', job, 0, hasEnd ? 8 : 15);
+    const lastImage = hasEnd ? await frameUrl('gen-end', job, 8, 15) : null;
+    if (job.cancelled) return;
+    markJobStep(job, steps, 'upload', 'done');
+    markJobStep(job, steps, 'gen', 'active');
+    startJobGhost(job, estimateMs('gen:' + mKey, 0, m.est * dur / 5), 15);
+    const tGen = Date.now();
+    const body = { prompt, image, duration: dur };
+    if (lastImage) body.last_image = lastImage;
+    if (m.resParam) body.resolution = res;
+    if (m.audio) body[m.audio.key] = audio;
+    if (m.aspect) body.aspect_ratio = document.getElementById('gen-aspect').value;
+    const d = await apiPost('/api/v3/' + m.path, body);
+    const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
+    markSubmitted(job, cost);
+    const url = await poll(id, job, steps, 'gen');
+    if (job.cancelled) return;
+    markPassDone(job); job.settled = true;
+    // learned per model, normalised to this clip length
+    recordSpeed('gen:' + mKey, Date.now() - tGen);
+    stopJobGhost(job, true);
+    showJobResult(job, url, true, fmtDur((Date.now() - t0) / 1000) + ' total', `${cost} tokens`);
+  } catch (e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
 // ─── Image Builder (Seedream 4.5 multi-reference) ────────────────────────────
@@ -2237,8 +2615,10 @@ function initApp() {
   initTimeline();
   renderVideoModels();
   onVideoModelChange();
+  setGenModel(genModel);
   renderTokens();
   libLoad();
+  document.getElementById('ds-key').value = dsKey;
   checkAuth();
 }
 initApp();
