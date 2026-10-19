@@ -7,6 +7,9 @@
 <meta name="description" content="grindspace — The Space to Grind. AI-powered face swap for photos and videos.">
 <meta property="og:title" content="grindspace — The Space to Grind">
 <meta property="og:description" content="AI face swap for photos & videos. No limits, no watermarks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -118,28 +121,6 @@ select:focus{border-color:var(--accent)}
 .cost-note.warn{color:var(--warn)}
 .slabel{font-size:11px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.8px}
 
-/* TYPE TOGGLE (multi-face image vs video) */
-.type-toggle{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;width:fit-content}
-.type-btn{padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;color:var(--sub);background:none;transition:all .15s}
-.type-btn.active{background:var(--accent);color:#fff}
-
-/* MULTI-FACE */
-.mf-hint{font-size:12px;color:var(--sub);background:var(--surface2);border-radius:8px;padding:10px 14px;line-height:1.6}
-.mf-hint strong{color:var(--text)}
-.mf-canvas-wrap{border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--border);max-width:480px}
-.mf-canvas-wrap canvas{display:block;width:100%;height:auto}
-.mf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.face-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:border-color .2s}
-.face-card.assigned{border-color:var(--accent)}
-.face-thumb{width:70px;height:70px;border-radius:50%;overflow:hidden;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;color:#555;flex-shrink:0}
-.face-thumb img{width:100%;height:100%;object-fit:cover}
-.face-lbl{font-size:11px;font-weight:600;color:var(--sub);text-align:center}
-.face-assigned-wrap{display:none;flex-direction:column;align-items:center;gap:4px}
-.face-assigned-img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
-.face-assigned-nm{font-size:10px;color:var(--sub);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.btn-assign{font-size:11px;color:var(--accent-l);cursor:pointer;background:rgba(124,58,237,.15);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;width:100%;text-align:center;transition:all .2s}
-.btn-assign:hover{background:var(--accent);color:#fff}
-
 /* RESULT */
 /* JOB CARDS (parallel swap queue) */
 .jobs-container{display:flex;flex-direction:column;gap:16px}
@@ -223,28 +204,6 @@ select:focus{border-color:var(--accent)}
 .btn-lock{display:none;align-items:center;gap:5px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);color:var(--sub);border-radius:9px;font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-lock:hover{border-color:var(--danger);color:var(--danger)}
 
-/* ── Provider selector ─────────────────────────────────── */
-.provider-section{padding:16px 20px 0;border-bottom:1px solid var(--border);background:var(--surface)}
-.provider-label{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--sub);text-transform:uppercase;margin-bottom:10px}
-.provider-cards{display:flex;gap:8px;flex-wrap:wrap}
-.prov-card{flex:1;min-width:120px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;transition:all .18s;text-align:left;position:relative;overflow:hidden}
-.prov-card:hover{border-color:rgba(168,85,247,.4);background:rgba(124,58,237,.07)}
-.prov-card.active{border-color:var(--accent);background:rgba(124,58,237,.12);box-shadow:0 0 0 3px rgba(124,58,237,.15)}
-.prov-card.active::before{content:'✓';position:absolute;top:7px;right:9px;font-size:11px;color:var(--accent);font-weight:800}
-.prov-name{font-size:13px;font-weight:700;color:var(--text);display:block;margin-bottom:2px}
-.prov-tag{font-size:10px;color:var(--sub);display:block;margin-bottom:6px}
-.prov-prices{display:flex;gap:6px;flex-wrap:wrap}
-.prov-price{font-size:10px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:5px;padding:2px 6px;color:var(--sub);white-space:nowrap}
-.prov-price.active-price{color:var(--accent-l);border-color:rgba(168,85,247,.3)}
-.prov-opts-bar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;min-height:44px}
-.prov-key-wrap{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:6px 12px;flex:1;min-width:180px;max-width:320px}
-.prov-key-wrap input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:12px;min-width:0}
-.prov-key-wrap.saved{border-color:var(--success)}
-.prov-key-wrap svg{color:#555;flex-shrink:0}
-.prov-opt-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sub);cursor:pointer;white-space:nowrap}
-.prov-opt-toggle input[type=checkbox]{accent-color:var(--accent);cursor:pointer}
-.prov-select{background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:11px;padding:4px 8px;outline:none;cursor:pointer}
-.prov-note{font-size:10px;color:var(--sub);opacity:.7}
 
 /* ── Mobile header ─────────────────────────────────────── */
 @media(max-width:640px){
@@ -326,6 +285,123 @@ select:focus{border-color:var(--accent)}
 .login-idle-msg{font-size:11px;color:var(--warn);text-align:center;display:none}
 .login-idle-msg.show{display:block}
 @keyframes loginShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MODERN THEME — overrides the base styles above
+   ════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#07070b;--surface:rgba(255,255,255,.035);--surface2:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.08);--border-h:rgba(255,255,255,.16);
+  --accent:#8b5cf6;--accent-l:#c084fc;--accent-2:#ec4899;--accent-glow:rgba(139,92,246,.45);
+  --grad:linear-gradient(135deg,#7c3aed 0%,#a855f7 45%,#ec4899 100%);
+  --text:#f4f4f6;--sub:#8b8b98;--r:18px;
+}
+html,body{font-family:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:-.01em}
+body{background:
+  radial-gradient(900px 600px at 10% -10%,rgba(124,58,237,.22),transparent 60%),
+  radial-gradient(700px 500px at 100% 0%,rgba(236,72,153,.12),transparent 60%),
+  radial-gradient(800px 600px at 50% 110%,rgba(59,130,246,.08),transparent 60%),
+  var(--bg);background-attachment:fixed}
+.trim-time,.skel-pct,.tok-big,.tok-pill b{font-family:'Geist Mono',ui-monospace,monospace;letter-spacing:-.02em}
+
+/* header */
+header{background:rgba(7,7,11,.6);border-bottom:1px solid var(--border);padding:12px 28px}
+header::after{background:linear-gradient(90deg,transparent,rgba(168,85,247,.5) 30%,rgba(236,72,153,.4) 70%,transparent)}
+.logo-icon{background:var(--grad);border-radius:12px;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 8px 24px rgba(139,92,246,.45)}
+.logo-text h1{font-size:16px;background:linear-gradient(135deg,#fff 20%,#e9d5ff 60%,#f9a8d4 100%);-webkit-background-clip:text;background-clip:text}
+.logo-text p{color:var(--sub)}
+.key-wrap{background:var(--surface);border-color:var(--border);border-radius:12px}
+.balance-pill,.tok-pill,.btn-lock{border-radius:999px}
+.tok-pill{background:rgba(139,92,246,.14);border-color:rgba(192,132,252,.35)}
+.btn-topup{background:var(--grad);border-radius:999px;padding:7px 14px;box-shadow:0 4px 18px rgba(168,85,247,.4)}
+.btn-topup:hover{background:var(--grad);filter:brightness(1.1)}
+
+/* layout */
+main{max-width:1080px;padding:28px 20px 60px;gap:22px}
+.mode-tabs{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:5px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);max-width:560px;margin:0 auto;width:100%}
+.tab{border-radius:999px;padding:10px 0;font-size:13px}
+.tab.active{background:var(--grad);box-shadow:0 6px 22px rgba(168,85,247,.4)}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:22px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 30px 80px -40px rgba(0,0,0,.8)}
+.panel.active{animation:panelIn .35s cubic-bezier(.22,1,.36,1)}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.slabel{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--sub)}
+
+/* Video tab: stage left, controls right (like a studio app) */
+@media(min-width:861px){
+  #tab-video.active{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px 22px;align-items:start}
+  #tab-video > :first-child{grid-column:1;grid-row:1 / span 3}
+  #tab-video > :not(:first-child){grid-column:2}
+  #tab-video .ctrl-row{flex-direction:column;align-items:stretch;gap:10px}
+  #tab-video .ctrl-row .btn-swap{justify-content:center;padding:13px 22px}
+  #tab-video .sel-wrap{justify-content:space-between}
+}
+
+/* uploads */
+.upload-zone{border:1.5px dashed var(--border-h);background:rgba(255,255,255,.02);border-radius:var(--r)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent-l);background:rgba(139,92,246,.08);box-shadow:0 0 0 4px rgba(139,92,246,.08)}
+.upload-zone.has-file{border-color:var(--border)}
+.uz-icon{opacity:.7;filter:grayscale(.2)}
+.uz-preview img,.uz-preview video{border-radius:12px}
+.uz-rm{border-radius:999px;border-color:var(--border-h);backdrop-filter:blur(6px)}
+.ref-tile{border-radius:14px;border-color:var(--border)}
+.ref-add{border:1.5px dashed var(--border-h)}
+.ref-num{border-radius:999px;background:var(--grad)}
+.compose-prompt,.modal input{background:rgba(255,255,255,.03);border-color:var(--border);border-radius:14px}
+.compose-prompt:focus,.modal input:focus{border-color:var(--accent-l);box-shadow:0 0 0 4px rgba(139,92,246,.12)}
+select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-radius:10px}
+.video-meta{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px}
+
+/* buttons */
+.btn-swap{background:var(--grad);border-radius:14px;padding:12px 24px;font-size:14px;box-shadow:0 10px 30px -8px rgba(168,85,247,.6),0 0 0 1px rgba(255,255,255,.1) inset}
+.btn-swap:hover:not(:disabled){background:var(--grad);filter:brightness(1.1);transform:translateY(-1px)}
+.btn-swap:disabled{opacity:.35;box-shadow:none}
+.tok-cost{border-radius:999px;padding:3px 10px}
+.trim-btn{border-radius:999px;background:rgba(255,255,255,.05);border-color:var(--border)}
+
+/* model picker */
+.vm-list{display:flex;flex-direction:column;gap:8px}
+.vm-card{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;text-align:left;background:rgba(255,255,255,.03);border:1.5px solid var(--border);border-radius:14px;padding:11px 14px;cursor:pointer;color:var(--text);font:inherit;transition:all .18s}
+.vm-card:hover{border-color:var(--border-h);background:rgba(255,255,255,.05)}
+.vm-card.active{border-color:var(--accent-l);background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(236,72,153,.08));box-shadow:0 0 0 4px rgba(139,92,246,.1)}
+.vm-name{font-size:13px;font-weight:700}
+.vm-tag{font-size:11px;color:var(--sub);grid-column:1}
+.vm-rate{grid-row:1 / span 2;grid-column:2;font-size:11px;font-weight:700;color:var(--accent-l);white-space:nowrap}
+.hd-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:11px 14px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.03);cursor:pointer}
+.hd-toggle b{display:block;font-size:13px}.hd-toggle small{font-size:11px;color:var(--sub)}
+.hd-toggle input{display:none}
+.hd-toggle i{position:relative;width:38px;height:22px;flex-shrink:0;border-radius:999px;background:rgba(255,255,255,.12);transition:background .2s}
+.hd-toggle i::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s cubic-bezier(.22,1,.36,1)}
+.hd-toggle input:checked + i{background:var(--grad)}
+.hd-toggle input:checked + i::after{transform:translateX(16px)}
+
+/* trim / timeline */
+.video-trim-wrap{border-radius:var(--r);border-color:var(--border);background:rgba(0,0,0,.25)}
+.tl{border-radius:12px}.tl-strip{border-radius:12px}
+.tl-sel{border-color:#fff;border-radius:10px}
+.tl-h{background:#fff}.tl-h::after{background:rgba(0,0,0,.45)}
+.tl-h-l{border-radius:10px 0 0 10px}.tl-h-r{border-radius:0 10px 10px 0}
+.trim-badge{border-radius:999px}
+
+/* jobs */
+.job-card{background:var(--surface);border-color:var(--border);border-radius:24px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.skel-track{height:10px;border-radius:999px;background:rgba(255,255,255,.06);border:none}
+.skel-fill{border-radius:999px;background:linear-gradient(90deg,#7c3aed,#a855f7,#ec4899,#a855f7,#7c3aed);background-size:300% 100%}
+.skel-pct{font-size:40px}
+.result-media{border-radius:16px}
+.btn-dl{border-radius:14px}
+.job-dismiss,.job-cancel{border-radius:999px}
+.chip{border-radius:999px}
+
+/* modal + toast */
+.modal{background:rgba(18,16,26,.92);border-color:var(--border);border-radius:24px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.modal-bg{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.tok-big{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.tok-big small{-webkit-text-fill-color:var(--sub)}
+.tok-pack{border-radius:14px;background:rgba(255,255,255,.03)}
+.toast{background:rgba(24,20,32,.95);border-color:rgba(239,68,68,.5);border-radius:14px;backdrop-filter:blur(12px)}
+.login-box{background:rgba(18,16,26,.85);border-color:var(--border);border-radius:28px;backdrop-filter:blur(20px)}
+.login-logo{background:var(--grad)}
+@media(max-width:640px){.panel{padding:16px;border-radius:20px}main{padding:18px 12px 48px}}
 </style>
 </head>
 <body>
@@ -528,7 +604,7 @@ select:focus{border-color:var(--accent)}
       </div>
       <div class="uprog" id="uprog"><div class="uprog-bar" id="uprog-bar"></div></div>
     </div>
-    <div style="max-width:340px">
+    <div class="vid-face">
       <div class="slabel" style="margin-bottom:8px">Source Face</div>
       <div class="upload-zone" id="uz-video-face" onclick="triggerFile('inp-video-face')">
         <input type="file" id="inp-video-face" accept="image/*" onchange="onFilePick(this,'video-face')">
@@ -540,8 +616,16 @@ select:focus{border-color:var(--accent)}
         <div id="ph-video-face-filled" style="display:none;width:100%"></div>
       </div>
     </div>
+    <div>
+      <div class="slabel" style="margin-bottom:8px">Model</div>
+      <div class="vm-list" id="vm-list"></div>
+      <label class="hd-toggle">
+        <span><b>HD Face</b><small>Sharpens the swapped face afterwards &middot; +1 token / s</small></span>
+        <input type="checkbox" id="vm-hd" onchange="onVideoModelChange()"><i></i>
+      </label>
+    </div>
     <div class="ctrl-row">
-      <div class="sel-wrap">
+      <div class="sel-wrap" id="video-idx-wrap">
         <label>Target face:</label>
         <select id="sel-video-idx">
           <option value="0">0 &mdash; Largest</option>
@@ -556,6 +640,7 @@ select:focus{border-color:var(--accent)}
         <span id="btn-video-lbl">Swap Face</span>
       </button>
       <span class="tok-cost" id="video-tok-cost">&#129689; 1 token / second</span>
+      <span class="cost-note" id="video-model-note"></span>
     </div>
   </div>
 
@@ -582,7 +667,11 @@ select:focus{border-color:var(--accent)}
       <div class="tok-prices">
         <span>Image Builder (Seedream 4.5)</span><b>4 / image</b>
         <span>Photo Swap</span><b>2 / image</b>
-        <span>Video Swap</span><b>1 / second (min. 3)</b>
+        <span>Video Face Swap</span><b>1 / s</b>
+        <span>Video Head Swap 480p / 720p</span><b>4 / 8 per s</b>
+        <span>Video Body Swap</span><b>8 / s</b>
+        <span>HD Face (add-on)</span><b>+1 / s</b>
+        <span style="grid-column:1/-1;opacity:.7">Video: min. 3 s billed. Head &amp; Body Swap capped at 120 s.</span>
       </div>
     </div>
     <div>
@@ -732,7 +821,23 @@ const TOKEN_PACKS = [100, 500, 1000, 2500];
 let wsBalance = null; // last known real WaveSpeed balance in $
 let selectedPack = 500;
 
-function videoTokens(sec) { return Math.max(3, Math.ceil((sec || 0) - 0.001)); }
+// Video swap models (WaveSpeed). rate = tokens per second, cap = max billed seconds
+const VIDEO_MODELS = {
+  face:     { name: 'Face Swap',      tag: 'Keeps head shape · fastest',   path: 'wavespeed-ai/video-face-swap', rate: 1, cap: Infinity, est: 6 },
+  head480:  { name: 'Head Swap 480p', tag: 'Swaps whole head incl. hair',       path: 'wavespeed-ai/video-head-swap', rate: 4, cap: 120, est: 10, resolution: '480p' },
+  head720:  { name: 'Head Swap 720p', tag: 'Whole head, sharper',               path: 'wavespeed-ai/video-head-swap', rate: 8, cap: 120, est: 14, resolution: '720p' },
+  body:     { name: 'Body Swap',      tag: 'Puts your face on the body video',  path: 'wavespeed-ai/video-body-swap', rate: 8, cap: 120, est: 15 }
+};
+const HD_RATE = 1;
+let videoModel = localStorage.getItem('gs_vmodel');
+if (!VIDEO_MODELS[videoModel]) videoModel = 'face';
+
+function billedSec(sec, cap = Infinity) { return Math.min(cap, Math.max(3, Math.ceil((sec || 0) - 0.001))); }
+// Token cost of one video job for the current (or given) model + HD setting
+function videoTokens(sec, model = videoModel, hd = document.getElementById('vm-hd')?.checked) {
+  const m = VIDEO_MODELS[model];
+  return billedSec(sec, m.cap) * m.rate + (hd ? billedSec(sec) * HD_RATE : 0);
+}
 function getTokens() { return parseInt(localStorage.getItem(TOK_KEY) || '0', 10) || 0; }
 function getLedger() { try { return JSON.parse(localStorage.getItem(LEDGER_KEY)) || []; } catch (e) { return []; } }
 
@@ -819,14 +924,14 @@ function doTopUp() {
 // ─── Learned processing speed (makes the ghost progress bar honest) ─────────
 function getSpeed() { try { return JSON.parse(localStorage.getItem(SPEED_KEY)) || {}; } catch (e) { return {}; } }
 // Video: seconds of processing per second of clip. Others: seconds per job.
-function estimateMs(kind, clipSec) {
+function estimateMs(kind, clipSec, defRatio = 6) {
   const sp = getSpeed();
-  if (kind === 'video') return Math.max(30, 20 + (clipSec || 10) * (sp.video ?? 6)) * 1000;
+  if (kind.startsWith('video')) return Math.max(30, 20 + (clipSec || 10) * (sp[kind] ?? defRatio)) * 1000;
   return (sp[kind] ?? (kind === 'compose' ? 35 : 20)) * 1000;
 }
 function recordSpeed(kind, ms, clipSec) {
   const sp = getSpeed();
-  const v = kind === 'video' ? Math.max(0.5, (ms / 1000 - 20) / Math.max(1, clipSec)) : ms / 1000;
+  const v = kind.startsWith('video') ? Math.max(0.5, (ms / 1000 - 20) / Math.max(1, clipSec)) : ms / 1000;
   sp[kind] = sp[kind] == null ? v : sp[kind] * 0.6 + v * 0.4; // smooth over recent jobs
   localStorage.setItem(SPEED_KEY, JSON.stringify(sp));
 }
@@ -840,13 +945,7 @@ keyEl.addEventListener('input', e => {
   dot();
   flashSaved();
 });
-dot();
-initDrop();
-renderRefs();
-initRefDrop();
-initTimeline();
-renderTokens();
-checkAuth();
+// Remaining init runs at the end of the script (initApp), once every top-level let/const exists
 
 function dot() {
   const k = apiKey();
@@ -989,10 +1088,11 @@ function fmtDur(sec) {
 
 // Ghost progress: eases from `from`% towards 97% so it reaches ~90% of the way
 // at the estimated time, then crawls. Estimate is learned from past jobs.
-function startJobGhost(job, estimatedMs, from = 2) {
+function startJobGhost(job, estimatedMs, from = 2, to = 97) {
   job.ghostEstMs = estimatedMs || 30000;
   job.ghostStart = Date.now();
   job.ghostFrom = from;
+  job.ghostTo = to;
   const fill  = document.getElementById(job.id + '-fill');
   const pctEl = document.getElementById(job.id + '-pct');
   if (fill)  fill.classList.remove('done');
@@ -1005,7 +1105,7 @@ function _tickJobGhost(job) {
   if (job.cancelled) return;
   const elapsed = Date.now() - job.ghostStart;
   const from = job.ghostFrom ?? 2;
-  const pct = from + (97 - from) * (1 - Math.exp(-2.3 * (elapsed / job.ghostEstMs)));
+  const pct = from + ((job.ghostTo ?? 97) - from) * (1 - Math.exp(-2.3 * (elapsed / job.ghostEstMs)));
   const fill  = document.getElementById(job.id + '-fill');
   const pctEl = document.getElementById(job.id + '-pct');
   if (fill)  { fill.style.transition = 'width .7s ease-out'; fill.style.width = pct + '%'; }
@@ -1609,26 +1709,64 @@ async function doPhotoSwap() {
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
+// ─── Video model picker ──────────────────────────────────────────────────────
+function renderVideoModels() {
+  document.getElementById('vm-list').innerHTML = Object.entries(VIDEO_MODELS).map(([k, m]) => `
+    <button class="vm-card${k === videoModel ? ' active' : ''}" onclick="setVideoModel('${k}')">
+      <span class="vm-name">${m.name}</span>
+      <span class="vm-tag">${m.tag}</span>
+      <span class="vm-rate">${m.rate} token${m.rate > 1 ? 's' : ''} / s</span>
+    </button>`).join('');
+}
+
+function setVideoModel(k) {
+  videoModel = k;
+  localStorage.setItem('gs_vmodel', k);
+  renderVideoModels();
+  onVideoModelChange();
+}
+
+function onVideoModelChange() {
+  const m = VIDEO_MODELS[videoModel];
+  const hd = document.getElementById('vm-hd').checked;
+  document.getElementById('video-idx-wrap').style.display = videoModel === 'face' ? '' : 'none';
+  document.getElementById('video-tok-cost').innerHTML = `&#129689; ${m.rate + (hd ? HD_RATE : 0)} token${m.rate + (hd ? HD_RATE : 0) > 1 ? 's' : ''} / second`;
+  document.getElementById('video-model-note').textContent = m.name + (hd ? ' + HD Face' : '') + (m.cap < Infinity ? ` · billed max. ${m.cap}s` : '');
+  document.getElementById('btn-video-lbl').textContent = videoModel === 'face' ? 'Swap Face' : videoModel === 'body' ? 'Swap Body' : 'Swap Head';
+  if (_vTrimDur) setTrim(_vTrimStart, _vTrimEnd);
+  const vf = F['video-target'];
+  if (vf) loadVideoDuration(vf.file, vf.dataUrl, 'video-info', 'video-cost', 'video-meta', null);
+}
+
 // ─── Video Swap ───────────────────────────────────────────────────────────────
 async function doVideoSwap() {
   if (!F['video-target'] || !F['video-face']) { toast('Upload both files first'); return; }
+  const mKey = videoModel, m = VIDEO_MODELS[mKey];
+  const hd = document.getElementById('vm-hd').checked;
+  const btnLbl = document.getElementById('btn-video-lbl').textContent;
   const hasTrim = !isFullClip();
   const trimS = _vTrimStart, trimE = _vTrimEnd;
   const clipSec = clipSeconds() || 0;
-  const cost = videoTokens(clipSec);
+  const cost = videoTokens(clipSec, mKey, hd);
+  const hdCost = hd ? billedSec(clipSec) * HD_RATE : 0;
   if (getTokens() < cost) { spendTokens(null, cost); return; }
   setBtn('video', true, 'Starting…');
-  if (!await preflight(cost * 0.01)) { setBtn('video', false, 'Swap Face'); return; }
-  setBtn('video', false, 'Swap Face'); // re-enable immediately
+  if (!await preflight(cost * 0.01)) { setBtn('video', false, btnLbl); return; }
+  setBtn('video', false, btnLbl); // re-enable immediately
   const t0 = Date.now();
-  const job = createJob(`Video Swap (${clipSec.toFixed(1)}s)`);
-  if (!spendTokens(job, cost, `Video Swap ${clipSec.toFixed(1)}s`)) { removeJob(job.id); return; }
-  const stepDefs = hasTrim
-    ? [{id:'trim', label:`Cutting clip (${fmtSecT(trimS)} → ${fmtSecT(trimE)})`}, {id:'upload', label:'Uploading clip'}, {id:'swap', label:'Processing face swap'}]
-    : [{id:'upload', label:'Uploading video'}, {id:'swap', label:'Processing face swap'}];
+  const title = `${m.name}${hd ? ' + HD' : ''} (${clipSec.toFixed(1)}s)`;
+  const job = createJob(title);
+  if (!spendTokens(job, cost, title)) { removeJob(job.id); return; }
+  const stepDefs = [
+    ...(hasTrim ? [{id:'trim', label:`Cutting clip (${fmtSecT(trimS)} → ${fmtSecT(trimE)})`}] : []),
+    {id:'upload', label: hasTrim ? 'Uploading clip' : 'Uploading video'},
+    {id:'swap', label:`${m.name} running`},
+    ...(hd ? [{id:'hd', label:'HD Face enhancing'}] : [])
+  ];
   const steps = jobSteps(job, stepDefs);
-  // Bar slices: cut 0–15 %, upload to 30 %, processing to 100 %
+  // Bar slices: cut 0–15 %, upload to 30 %, swap to 100 % (or 80 % + HD to 100 %)
   const upFrom = hasTrim ? 15 : 0;
+  const swapTo = hd ? 80 : 97;
   try {
     let fileToSwap = F['video-target'].file;
     if (hasTrim) {
@@ -1643,20 +1781,42 @@ async function doVideoSwap() {
     markJobStep(job, steps, 'upload', 'done');
     markJobStep(job, steps, 'swap', 'active');
     const tSwap = Date.now();
-    startJobGhost(job, estimateMs('video', clipSec), 30);
-    const d = await apiPost('/api/v3/wavespeed-ai/video-face-swap', {
-      video: videoUrl,
-      face_image: F['video-face'].dataUrl,
-      target_index: parseInt(document.getElementById('sel-video-idx').value)
-    });
+    startJobGhost(job, estimateMs('video:' + mKey, clipSec, m.est), 30, swapTo);
+    const face = F['video-face'].dataUrl;
+    const body = mKey === 'face'
+      ? { video: videoUrl, face_image: face, target_index: parseInt(document.getElementById('sel-video-idx').value) }
+      : mKey === 'body'
+        ? { video: videoUrl, image: face }
+        : { video: videoUrl, face_image: face, resolution: m.resolution };
+    const d = await apiPost('/api/v3/' + m.path, body);
     const id = d?.data?.id; if (!id) throw new Error('No prediction ID');
     job.submitted = true;
-    const url = await poll(id, job, steps, 'swap');
+    let url = await poll(id, job, steps, 'swap');
     if (job.cancelled) return;
+    recordSpeed('video:' + mKey, Date.now() - tSwap, clipSec);
+    let charged = cost;
+    if (hd) {
+      // The swap is paid for now; only the HD part can still be refunded
+      job.tokens = hdCost; job.submitted = false;
+      markJobStep(job, steps, 'hd', 'active');
+      const tHd = Date.now();
+      startJobGhost(job, estimateMs('video:hd', clipSec, 3), swapTo);
+      try {
+        const dh = await apiPost('/api/v3/wavespeed-ai/face-enhancer/video', { video: url });
+        const hid = dh?.data?.id; if (!hid) throw new Error('No prediction ID');
+        job.submitted = true;
+        url = await poll(hid, job, steps, 'hd');
+        if (job.cancelled) return;
+        recordSpeed('video:hd', Date.now() - tHd, clipSec);
+      } catch (e) {
+        if (e.message === 'Cancelled') return;
+        refundJob(job); charged -= hdCost;
+        toast(`HD Face failed (${e.message}) — showing the normal result, ${hdCost} tokens refunded.`);
+      }
+    }
     job.settled = true;
-    recordSpeed('video', Date.now() - tSwap, clipSec);
     stopJobGhost(job, true);
-    showJobResult(job, url, true, fmtDur((Date.now()-t0)/1000)+' total', `${cost} tokens`);
+    showJobResult(job, url, true, fmtDur((Date.now()-t0)/1000)+' total', `${charged} tokens`);
   } catch(e) { if (e.message !== 'Cancelled') { stopJobGhost(job, false); jobError(job, e.message); } }
 }
 
@@ -1769,6 +1929,19 @@ function fmtBytes(n) {
   if (n < 1048576) return (n/1024).toFixed(0) + ' KB';
   return (n/1048576).toFixed(1) + ' MB';
 }
+
+function initApp() {
+  dot();
+  initDrop();
+  renderRefs();
+  initRefDrop();
+  initTimeline();
+  renderVideoModels();
+  onVideoModelChange();
+  renderTokens();
+  checkAuth();
+}
+initApp();
 </script>
 </body>
 </html>
