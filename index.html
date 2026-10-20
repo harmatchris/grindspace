@@ -1351,7 +1351,9 @@ function stopJobGhost(job, success) {
 }
 
 function showJobResult(job, url, isVid, time, cost) {
-  mediaSave({ url, isVid, title: job.title, prompt: job.prompt || '', cost, time });
+  const recipe = job.recipe || null;
+  if (recipe) recipes.set(job.id, recipe);
+  mediaSave({ url, isVid, title: job.title, prompt: job.prompt || '', cost, time, recipe });
   const chip   = document.getElementById(job.id + '-chip');
   const cancel = document.getElementById(job.id + '-cancel');
   if (chip)   { chip.textContent = 'Done'; chip.className = 'chip done'; }
@@ -1368,7 +1370,11 @@ function showJobResult(job, url, isVid, time, cost) {
       actions.style.display = 'flex';
       if (!isVid && !actions.querySelector('.btn-frame')) actions.insertAdjacentHTML('beforeend',
         `<button class="job-dismiss btn-frame" onclick="useAsFrame('gen-start','${url}')">&#127916; Use as start frame</button>
-         <button class="job-dismiss btn-frame" onclick="useAsFrame('gen-end','${url}')">&#127937; Use as end frame</button>`);
+         <button class="job-dismiss btn-frame" onclick="useAsFrame('gen-end','${url}')">&#127937; Use as end frame</button>
+         <button class="job-dismiss btn-frame" onclick="editImage('${url}')">&#9998;&#65039; Edit image</button>`);
+      if (recipe && !actions.querySelector('.btn-again')) actions.insertAdjacentHTML('beforeend',
+        `<button class="job-dismiss btn-again" onclick="runAgain(recipes.get('${job.id}'))">&#128257; Again (same prompt)</button>
+         <button class="job-dismiss btn-again" onclick="loadRecipe(recipes.get('${job.id}'))">&#9881;&#65039; Load settings</button>`);
     }
     if (meta)    meta.innerHTML = `<span>&#9201; ${time}</span><span>${/token/.test(cost) ? '&#129689; ' : ''}${cost}</span>`;
   }, 1000);
@@ -2055,6 +2061,61 @@ async function libUploadMany(files) {
 }
 
 
+// ─── Edit / run again ────────────────────────────────────────────────────────
+const recipes = new Map(); // job id → recipe (prompt, references, settings)
+
+const asFile = (x, name) => x instanceof File ? x : new File([x], name, { type: x.type || 'image/jpeg' });
+
+// Image → Image Builder as reference 1, prompt cleared for the edit instruction
+async function editImage(urlOrBlob) {
+  const blob = urlOrBlob instanceof Blob ? urlOrBlob : await fetch(urlOrBlob).then(r => r.blob()).catch(() => null);
+  if (!blob) { toast('Could not load this image'); return; }
+  refs.length = 0;
+  refs.push({ file: asFile(blob, 'edit.jpg'), dataUrl: await blobToDataUrl(blob) });
+  renderRefs();
+  const pr = document.getElementById('compose-prompt');
+  pr.value = '';
+  switchTab('compose');
+  pr.placeholder = 'Describe the change, e.g. "Same image, but the athlete wears a red shirt and the background is a night stadium"';
+  pr.focus(); checkBtns();
+  toast('Image loaded as reference 1 — describe what to change. Add more references if needed.');
+}
+
+// Puts prompt, references/frames and settings back into the form
+async function loadRecipe(rc) {
+  if (!rc) { toast('No settings stored for this item'); return false; }
+  if (rc.type === 'compose') {
+    refs.length = 0;
+    for (const b of rc.refs || []) refs.push({ file: asFile(b, 'ref.jpg'), dataUrl: await blobToDataUrl(b) });
+    renderRefs();
+    document.getElementById('compose-prompt').value = rc.prompt;
+    if (rc.size) document.getElementById('sel-compose-size').value = rc.size;
+    switchTab('compose');
+  } else if (rc.type === 'gen') {
+    for (const [key, v] of [['gen-start', rc.start], ['gen-end', rc.end]]) {
+      if (!v) { if (F[key]) removeFile(key); continue; }
+      if (typeof v === 'string') { F[key] = { remote: v, dataUrl: v, file: { name: 'frame.jpg', type: 'image/jpeg', size: 0 } }; showPreview(key, F[key].file, v); }
+      else { const f = asFile(v, 'frame.jpg'); F[key] = { file: f, dataUrl: await blobToDataUrl(f) }; showPreview(key, f, F[key].dataUrl); }
+    }
+    if (GEN_MODELS[rc.model]) setGenModel(rc.model);
+    document.getElementById('gen-dur').value = rc.dur;
+    document.getElementById('gen-res').value = rc.res;
+    document.getElementById('gen-audio').checked = !!rc.audio;
+    if (rc.aspect) document.getElementById('gen-aspect').value = rc.aspect;
+    document.getElementById('gen-prompt').value = rc.prompt;
+    updateGenCost();
+    switchTab('gen');
+  }
+  checkBtns();
+  return true;
+}
+
+// Same prompt, same inputs, new result
+async function runAgain(rc) {
+  if (!await loadRecipe(rc)) return;
+  return rc.type === 'compose' ? doCompose() : doGenerate();
+}
+
 // ─── Media library: every result, stored as a real file (this browser only) ──
 let mediaCache = [], mediaFilter = 'all', _mediaUrls = [];
 
@@ -2109,7 +2170,10 @@ async function renderMedia() {
         <button onclick="mediaUse('${r.id}','gen-start')" title="Use as start frame">&#127916;</button>
         <button onclick="mediaUse('${r.id}','gen-end')" title="Use as end frame">&#127937;</button>
         <button onclick="mediaUse('${r.id}','ref')" title="Add as Image Builder reference">&#10133;</button>
-        <button onclick="mediaUse('${r.id}','face')" title="Save to face library">&#128100;</button>`}
+        <button onclick="mediaUse('${r.id}','face')" title="Save to face library">&#128100;</button>
+        <button onclick="mediaUse('${r.id}','edit')" title="Edit this image">&#9998;&#65039;</button>`}
+        ${r.recipe ? `<button onclick="runAgain(mediaFind('${r.id}').recipe)" title="Again with the same prompt">&#128257;</button>
+        <button onclick="loadRecipe(mediaFind('${r.id}').recipe)" title="Load prompt and settings">&#9881;&#65039;</button>` : ''}
         <button class="danger" onclick="mediaDelete('${r.id}')" title="Delete">&#128465;</button>
       </div>
     </div>`;
@@ -2155,6 +2219,7 @@ async function mediaUse(id, target) {
   }
   if (!blob) { toast('This item is only a link and could not be loaded'); return; }
   const file = new File([blob], 'image.jpg', { type: blob.type || 'image/jpeg' });
+  if (target === 'edit') return editImage(blob);
   if (target === 'ref') {
     if (refs.length >= MAX_REFS) { toast(`Max ${MAX_REFS} reference images`); return; }
     refs.push({ file, dataUrl: await blobToDataUrl(blob) }); renderRefs(); switchTab('compose');
@@ -2640,6 +2705,9 @@ async function doGenerate() {
   const title = `${m.name} · ${dur} s${hasEnd ? ' · start + end' : ''}`;
   const job = createJob(title);
   job.prompt = prompt;
+  const frame = k => F[k] ? (F[k].remote || F[k].file) : null;
+  job.recipe = { type: 'gen', prompt, model: mKey, dur, res, audio, aspect: document.getElementById('gen-aspect').value,
+                 start: frame('gen-start'), end: hasEnd ? frame('gen-end') : null };
   if (!spendTokens(job, cost, title)) { removeJob(job.id); return; }
   const steps = jobSteps(job, [{id:'upload', label:'Uploading frames'}, {id:'gen', label:`${m.name} is generating`}]);
   markJobStep(job, steps, 'upload', 'active');
@@ -2722,6 +2790,7 @@ async function doCompose() {
   const snapshot = refs.slice();
   const job = createJob(`Image Builder (${snapshot.length} ref${snapshot.length > 1 ? 's' : ''})`);
   job.prompt = prompt;
+  job.recipe = { type: 'compose', prompt, size: document.getElementById('sel-compose-size').value, refs: snapshot.map(r => r.file) };
   if (!spendTokens(job, cost, 'Image Builder')) { removeJob(job.id); return; }
   const steps = jobSteps(job, [{id:'upload', label:`Uploading ${snapshot.length} image${snapshot.length > 1 ? 's' : ''}`}, {id:'gen', label:'Seedream 4.5 is building'}]);
   markJobStep(job, steps, 'upload', 'active');
