@@ -2097,7 +2097,9 @@ function renderVideoModels() {
 
 function setVideoModel(k) {
   // Detected faces belong to one provider (face-api index vs DeepSwap face id)
-  if (isDS(k) !== isDS(videoModel)) { videoModel = k; resetMF(); }
+  const providerChanged = isDS(k) !== isDS(videoModel);
+  videoModel = k;
+  if (providerChanged) resetMF();
   localStorage.setItem('gs_vmodel', k);
   renderVideoModels();
   onVideoModelChange();
