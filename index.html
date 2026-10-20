@@ -585,7 +585,7 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
     <div class="ctrl-row">
       <div class="sel-wrap">
         <label>Format:</label>
-        <select id="sel-compose-size">
+        <select id="sel-compose-size" onchange="updateComposeNote()">
           <option value="2048*2048">1:1 Square</option>
           <option value="1728*2304">3:4 Portrait</option>
           <option value="1440*2560" selected>9:16 Reel</option>
@@ -593,11 +593,18 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
           <option value="2560*1440">16:9 Wide</option>
         </select>
       </div>
+      <div class="sel-wrap">
+        <label>Quality:</label>
+        <select id="sel-compose-q" onchange="updateComposeNote()">
+          <option value="hd" selected>HD (2K)</option>
+          <option value="4k">4K</option>
+        </select>
+      </div>
       <button class="btn-swap" id="btn-compose" onclick="doCompose()" disabled>
         <svg id="btn-compose-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3 1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/></svg>
         <span id="btn-compose-lbl">Build Image</span>
       </button>
-      <span class="tok-cost">&#129689; 4 tokens</span><span class="cost-note">Seedream 4.5</span>
+      <span class="tok-cost">&#129689; 4 tokens</span><span class="cost-note" id="compose-note">Seedream 4.5</span>
     </div>
   </div>
 
@@ -2089,7 +2096,10 @@ async function loadRecipe(rc) {
     for (const b of rc.refs || []) refs.push({ file: asFile(b, 'ref.jpg'), dataUrl: await blobToDataUrl(b) });
     renderRefs();
     document.getElementById('compose-prompt').value = rc.prompt;
-    if (rc.size) document.getElementById('sel-compose-size').value = rc.size;
+    if (rc.fmt) document.getElementById('sel-compose-size').value = rc.fmt;
+    else if (rc.size) document.getElementById('sel-compose-size').value = rc.size;
+    document.getElementById('sel-compose-q').value = rc.quality || 'hd';
+    updateComposeNote();
     switchTab('compose');
   } else if (rc.type === 'gen') {
     for (const [key, v] of [['gen-start', rc.start], ['gen-end', rc.end]]) {
@@ -2778,6 +2788,17 @@ function initRefDrop() {
   grid.addEventListener('drop', e => { e.preventDefault(); grid.classList.remove('drag'); onRefsPick(e.dataTransfer.files); });
 }
 
+// Format select holds the HD (2K) size; 4K scales the long side to 4096 px
+function composeSize() {
+  const [w, h] = document.getElementById('sel-compose-size').value.split('*').map(Number);
+  if (document.getElementById('sel-compose-q').value !== '4k') return `${w}*${h}`;
+  const k = 4096 / Math.max(w, h);
+  return `${Math.round(w * k / 16) * 16}*${Math.round(h * k / 16) * 16}`;
+}
+function updateComposeNote() {
+  document.getElementById('compose-note').textContent = 'Seedream 4.5 \u00b7 ' + composeSize().replace('*', ' \u00d7 ') + ' px';
+}
+
 async function doCompose() {
   const prompt = document.getElementById('compose-prompt').value.trim();
   if (!refs.length || !prompt) { toast('Add at least one image and a prompt'); return; }
@@ -2790,7 +2811,7 @@ async function doCompose() {
   const snapshot = refs.slice();
   const job = createJob(`Image Builder (${snapshot.length} ref${snapshot.length > 1 ? 's' : ''})`);
   job.prompt = prompt;
-  job.recipe = { type: 'compose', prompt, size: document.getElementById('sel-compose-size').value, refs: snapshot.map(r => r.file) };
+  job.recipe = { type: 'compose', prompt, fmt: document.getElementById('sel-compose-size').value, quality: document.getElementById('sel-compose-q').value, refs: snapshot.map(r => r.file) };
   if (!spendTokens(job, cost, 'Image Builder')) { removeJob(job.id); return; }
   const steps = jobSteps(job, [{id:'upload', label:`Uploading ${snapshot.length} image${snapshot.length > 1 ? 's' : ''}`}, {id:'gen', label:'Seedream 4.5 is building'}]);
   markJobStep(job, steps, 'upload', 'active');
@@ -2807,7 +2828,7 @@ async function doCompose() {
     const d = await apiPost('/api/v3/bytedance/seedream-v4.5/edit', {
       prompt,
       images: urls,
-      size: document.getElementById('sel-compose-size').value,
+      size: composeSize(),
       enable_sync_mode: false,
       enable_base64_output: false
     });
@@ -2858,6 +2879,7 @@ function initApp() {
   renderVideoModels();
   onVideoModelChange();
   setGenModel(genModel);
+  updateComposeNote();
   renderTokens();
   libLoad();
   mediaInit();
