@@ -338,6 +338,7 @@ select:focus{border-color:var(--accent)}
 
 .vm-list.gm-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 .gen-audio{margin-top:0;padding:7px 12px}
+.upload-zone.uz-off{opacity:.35;pointer-events:none}
 @media(max-width:640px){.tab{font-size:11px;gap:4px}.tab svg{display:none}}
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -748,6 +749,7 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
         </div>
       </div>
     </div>
+    <div class="ref-hint" id="gen-end-note" style="display:none;margin-top:-6px;color:var(--warn)">This model only uses the start frame. Pick another model for start + end.</div>
     <div class="ref-hint" style="margin-top:-6px">Tip: images from the Image Builder have &ldquo;Use as start / end frame&rdquo; buttons.</div>
     <div>
       <div class="slabel" style="margin-bottom:8px">What should happen?</div>
@@ -2378,6 +2380,7 @@ async function doVideoSwapDeepSwap() {
 const GEN_MODELS = {
   sd1lite: { name: 'Seedance 1 Lite',     tag: 'Cheapest · 480p · good for drafts',  path: 'bytedance/seedance-v1-lite-i2v-480p',            durations: [3, 5, 8, 10, 12], res: { '480p': 0.016 }, est: 60 },
   wan22:   { name: 'Wan 2.2',             tag: 'Cheap · 480p · smooth motion',       path: 'wavespeed-ai/wan-2.2/i2v-480p',                 durations: [5, 8],            res: { '480p': 0.03 },  est: 90 },
+  wan25:   { name: 'Wan 2.5',             tag: 'Wan with sound \u00b7 up to 1080p \u00b7 start frame only', path: 'alibaba/wan-2.5/image-to-video', durations: [3, 5, 8, 10], res: { '480p': 0.05, '720p': 0.10, '1080p': 0.15 }, resParam: true, noEnd: true, est: 120 },
   kling25: { name: 'Kling 2.5 Turbo Pro', tag: 'Best value for action · 1080p',         path: 'kwaivgi/kling-v2.5-turbo-pro/image-to-video',   durations: [5, 10],           res: { '1080p': 0.07 }, est: 120 },
   kling30: { name: 'Kling 3.0',           tag: 'Newer Kling · optional sound',          path: 'kwaivgi/kling-v3.0-std/image-to-video',         durations: [3, 5, 8, 10, 15], res: { '1080p': 0.084 }, audio: { key: 'sound', factor: 1.5 }, est: 150 },
   sd20f:   { name: 'Seedance 2.0 Fast',   tag: 'Strong motion · native audio',          path: 'bytedance/seedance-2.0-fast/image-to-video',    durations: [4, 5, 8, 10, 15], res: { '480p': 0.10, '720p': 0.20, '1080p': 0.50 }, resParam: true, audio: { key: 'generate_audio', factor: 1 }, est: 120 },
@@ -2426,6 +2429,9 @@ function setGenModel(k) {
   document.getElementById('gen-res-wrap').style.display = resKeys.length > 1 ? '' : 'none';
   document.getElementById('gen-aspect-wrap').style.display = m.aspect ? '' : 'none';
   document.getElementById('gen-audio-wrap').style.display = m.audio ? '' : 'none';
+  // Some models (Wan 2.5) only take a start frame
+  document.getElementById('uz-gen-end').classList.toggle('uz-off', !!m.noEnd);
+  document.getElementById('gen-end-note').style.display = m.noEnd ? '' : 'none';
   renderGenModels();
   updateGenCost();
 }
@@ -2465,7 +2471,8 @@ async function doGenerate() {
   if (!await preflight(cost * 0.01)) { setBtn('gen', false, 'Generate Video'); return; }
   setBtn('gen', false, 'Generate Video');
   const t0 = Date.now();
-  const hasEnd = !!F['gen-end'];
+  const hasEnd = !!F['gen-end'] && !m.noEnd;
+  if (F['gen-end'] && m.noEnd) toast(`${m.name} only uses the start frame \u2014 the end frame is ignored.`);
   const title = `${m.name} · ${dur} s${hasEnd ? ' · start + end' : ''}`;
   const job = createJob(title);
   if (!spendTokens(job, cost, title)) { removeJob(job.id); return; }
@@ -2473,7 +2480,7 @@ async function doGenerate() {
   markJobStep(job, steps, 'upload', 'active');
   try {
     const image = await frameUrl('gen-start', job, 0, hasEnd ? 8 : 15);
-    const lastImage = hasEnd ? await frameUrl('gen-end', job, 8, 15) : null;
+    const lastImage = hasEnd && !m.noEnd ? await frameUrl('gen-end', job, 8, 15) : null;
     if (job.cancelled) return;
     markJobStep(job, steps, 'upload', 'done');
     markJobStep(job, steps, 'gen', 'active');
