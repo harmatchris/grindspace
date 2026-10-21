@@ -372,6 +372,13 @@ select:focus{border-color:var(--accent)}
 .key-eye{background:none;border:none;color:var(--sub);cursor:pointer;font-size:13px;padding:0 2px;opacity:.6}
 .key-eye.on{opacity:1;color:var(--accent-l)}
 
+.key-check{background:var(--grad,#7c3aed);border:none;border-radius:999px;color:#fff;font:inherit;font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;flex-shrink:0}
+.header-center{display:flex;flex-direction:column}
+.key-status{order:2;font-size:11px;line-height:1.4;margin:6px 0 0 6px;display:none;word-break:break-all}
+.key-status.ok,.key-status.bad,.key-status.wait{display:block}
+.key-status.ok{color:var(--success)}.key-status.bad{color:var(--danger);font-family:'Geist Mono',monospace}.key-status.wait{color:var(--sub)}
+.sdot.bad{background:var(--danger);animation:none}
+
 /* ════════════════════════════════════════════════════════════════════════
    MODERN THEME — overrides the base styles above
    ════════════════════════════════════════════════════════════════════════ */
@@ -556,11 +563,13 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
     </div>
   </div>
   <div class="header-center">
+    <div class="key-status" id="key-status"></div>
     <div class="key-wrap" id="key-wrap">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <input type="text" class="key-mask" id="apiKey" name="ws-api-key" placeholder="WaveSpeed API key&hellip;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true">
       <button type="button" class="key-eye" onclick="toggleKeyMask('apiKey', this)" title="Show / hide key">&#128065;</button>
       <span class="key-saved-label" id="key-saved">Saved &#10003;</span>
+      <button type="button" class="key-check" id="key-check" onclick="checkKey()">Check</button>
       <div class="sdot" id="sdot"></div>
     </div>
   </div>
@@ -1211,6 +1220,35 @@ function dot() {
   document.getElementById('sdot').classList.toggle('ok', k.length > 8);
   checkBtns();
   if (k.length > 8) fetchBalance();
+  clearTimeout(dot._t);
+  if (k.length > 8) dot._t = setTimeout(checkKey, 600); // auto-check shortly after paste
+  else showKeyStatus('', '');
+}
+
+// Asks WaveSpeed directly whether the key works and shows the result
+async function checkKey() {
+  const k = apiKey();
+  if (!k) { showKeyStatus('bad', 'No key entered'); return false; }
+  showKeyStatus('wait', `Checking ${keyHint(k)}\u2026`);
+  try {
+    const r = await apiFetch('/api/v3/balance', { headers: { 'Authorization': `Bearer ${k}` } });
+    const d = await r.json().catch(() => ({}));
+    const bal = d?.data?.balance ?? d?.balance;
+    if (r.ok && bal !== undefined) {
+      showKeyStatus('ok', `\u2705 Key works \u00b7 balance $${parseFloat(bal).toFixed(2)}`);
+      return true;
+    }
+    showKeyStatus('bad', `\u274C WaveSpeed rejects this key (${k.length} chars). Compare: ${k.match(/.{1,4}/g).join(' ')}`);
+  } catch (e) {
+    showKeyStatus('bad', '\u26A0\uFE0F Could not reach WaveSpeed (network). Try again.');
+  }
+  return false;
+}
+function showKeyStatus(kind, text) {
+  const el = document.getElementById('key-status');
+  el.className = 'key-status ' + kind; el.textContent = text;
+  document.getElementById('sdot').classList.toggle('ok', kind === 'ok' || (kind !== 'bad' && apiKey().length > 8));
+  document.getElementById('sdot').classList.toggle('bad', kind === 'bad');
 }
 
 // ─── Live Balance ─────────────────────────────────────────────────────────────
