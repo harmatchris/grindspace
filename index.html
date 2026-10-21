@@ -215,7 +215,9 @@ select:focus{border-color:var(--accent)}
 @media(max-width:640px){
   header{flex-wrap:wrap;padding:10px 14px 10px;gap:6px 10px}
   .header-center{order:10;width:100%;max-width:100%}
-  .btn-lock,.btn-topup,.balance-pill,.btn-lib{display:none!important}
+  .btn-topup,.balance-pill,.btn-lib{display:none!important}
+  .btn-lock{padding:9px 12px}
+  .btn-lock .lock-lbl{display:none}
   .balance-widget{margin-left:auto}
   .logo-text p{display:none}
 }
@@ -577,7 +579,7 @@ select{background-color:rgba(255,255,255,.05);border-color:var(--border);border-
     <button class="btn-topup" onclick="openTokens()">+ Top up</button>
     <button class="btn-lock" id="btn-lock" onclick="doLogout()">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Lock
+      <span class="lock-lbl">Lock</span>
     </button>
   </div>
 </header>
@@ -1042,10 +1044,12 @@ function resetIdle() {
 const F = {};
 const refs = []; // Seedream reference images: [{file, dataUrl}]
 const MAX_REFS = 10;
-let wsKey = (localStorage.getItem('wsKey') || '').replace(/[\s"'\u200B-\u200D\uFEFF]/g, '');
+let wsKey = String(localStorage.getItem('wsKey') || '').normalize('NFKC').replace(/[^A-Za-z0-9_\-]/g, '');
 function apiKey() { return wsKey; }
 // Pasted keys on phones often carry spaces, line breaks or quotes
-function cleanKey(v) { return String(v || '').replace(/[\s"'\u200B-\u200D\uFEFF]/g, ''); }
+// API keys are plain ASCII letters, digits, "_" and "-": drop everything else
+// (soft hyphens, zero-width and control characters sneak in when copying on iOS)
+function cleanKey(v) { return String(v || '').normalize('NFKC').replace(/[^A-Za-z0-9_\-]/g, ''); }
 function keyHint(k) { return k ? `${k.slice(0, 8)}\u2026${k.slice(-4)} (${k.length} chars)` : 'empty'; }
 function toggleKeyMask(id, btn) { const el = document.getElementById(id); el.classList.toggle('key-mask'); btn.classList.toggle('on', !el.classList.contains('key-mask')); }
 
@@ -1193,6 +1197,7 @@ function recordSpeed(kind, ms, clipSec) {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 const keyEl = document.getElementById('apiKey');
 keyEl.value = wsKey;
+localStorage.setItem('wsKey', wsKey);
 keyEl.addEventListener('input', e => {
   wsKey = cleanKey(e.target.value);
   localStorage.setItem('wsKey', wsKey);
@@ -2513,7 +2518,7 @@ async function doVideoSwap() {
 // Flow: upload clip → "material" (DeepSwap detects every face) → task with
 // faceMappings (detected face id → new portrait URL) → poll task.
 const DS_API = 'https://api.deepswap.ai/fs';
-let dsKey = (localStorage.getItem('dsKey') || '').replace(/[\s"'\u200B-\u200D\uFEFF]/g, '');
+let dsKey = String(localStorage.getItem('dsKey') || '').normalize('NFKC').replace(/[^A-Za-z0-9_\-]/g, '');
 let dsMaterial = null; // { id, sel, faces:[{id,url}] } for the current file + selection
 
 async function dsFetch(path, body) {
